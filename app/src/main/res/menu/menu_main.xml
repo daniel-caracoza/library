@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group
+        android:id="@+id/view_toggle_menu"
+        android:checkableBehavior="single"/>
+        <item
+            android:id="@+id/toggle_price"
+            android:checked="true"
+            android:title="@string/show_prices"
+            android:checkable="true"
+             />
+        <item
+            android:id="@+id/toggle_reviews"
+            android:checked="true"
+            android:checkable="true"
+            android:title="@string/show_review"
+            />
+        <item
+            android:id="@+id/toggle_recommendations"
+            android:checked="true"
+            android:checkable="true"
+            android:title="@string/show_recommendations"/>
+    <group/>
+
+
+</menu>
