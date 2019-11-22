@@ -1,10 +1,13 @@
 package com.example.library
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import android.widget.Button
 import android.widget.EditText
+import android.widget.Toast
 import androidx.room.Room
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
@@ -14,45 +17,31 @@ import com.google.android.gms.tasks.Task
 import com.google.android.gms.common.api.ApiException
 
 
-class LoginActivity : AppCompatActivity() {
+class LoginActivity : AppCompatActivity(), View.OnClickListener {
 
     private lateinit var username: EditText
     private lateinit var password: EditText
-    //private lateinit var loginButton: Button
+    private lateinit var loginButton: Button
     private lateinit var sign_in_button: SignInButton
-    //private lateinit var sign_up_button: Button
+    private lateinit var sign_up_button: Button
     private var RC_SIGN_IN = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
+        setSupportActionBar(findViewById(R.id.login_toolbar))
         initViews()
-        //integrate google sign in
-        // Configure sign-in to request the user's ID, email address, and basic
-        // profile. ID and basic profile are included in DEFAULT_SIGN_IN.
-        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestEmail()
-            .build()
-        // Build a GoogleSignInClient with the options specified by gso.
-        val mGoogleSignInClient = GoogleSignIn.getClient(this, gso)
-        sign_in_button.setOnClickListener {
-            val signInIntent = mGoogleSignInClient.signInIntent
-            startActivityForResult(signInIntent, RC_SIGN_IN)
+        initListeners()
+    }
+    override fun onClick(v:View?){
+        when(v?.id){
+            R.id.login -> { userLogin() }
+            R.id.signup -> { startRegistration() }
+            R.id.sign_in_button -> googleSignIn()
         }
-        var loginButton = findViewById<Button>(R.id.login)
-        loginButton.setOnClickListener {
-            userLogin()
-        }
-        var sign_up_button = findViewById<Button>(R.id.signup)
-        sign_up_button.setOnClickListener{
-            val intent = Intent(this, Registration::class.java)
-            startActivity(intent)
-        }
-
     }
    public override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-
         // Result returned from launching the Intent from GoogleSignInClient.getSignInIntent(...);
         if (requestCode == RC_SIGN_IN) {
             // The Task returned from this call is always completed, no need to attach
@@ -64,13 +53,13 @@ class LoginActivity : AppCompatActivity() {
     private fun handleSignInResult(completedTask: Task<GoogleSignInAccount>) {
         try {
             val account = completedTask.getResult(ApiException::class.java)
-
+            startActivity(Intent(this, MainActivity::class.java))
+            finish()
             // Signed in successfully, show authenticated UI.
-            //updateUI(account)
         } catch (e: ApiException) {
             // The ApiException status code indicates the detailed failure reason.
             // Please refer to the GoogleSignInStatusCodes class reference for more information.
-            //updateUI(null)
+            Toast.makeText(this, "Failed Sign In", Toast.LENGTH_LONG).show()
         }
 
     }
@@ -79,11 +68,15 @@ class LoginActivity : AppCompatActivity() {
     private fun initViews(){
         username = findViewById(R.id.username)
         password = findViewById (R.id.password)
-        //loginButton = findViewById(R.id.login)
+        loginButton = findViewById<Button>(R.id.login)
         sign_in_button = findViewById(R.id.sign_in_button)
-        //sign_up_button = findViewById(R.id.signup)
+        sign_up_button = findViewById<Button>(R.id.signup)
     }
-
+    private fun initListeners(){
+        sign_up_button.setOnClickListener(this)
+        loginButton.setOnClickListener(this)
+        sign_in_button.setOnClickListener(this)
+    }
     fun userLogin(){
         var uname = username.text.toString()
         var pwd = password.text.toString()
@@ -98,14 +91,34 @@ class LoginActivity : AppCompatActivity() {
             startActivity(intent)
         }
     }
+
+    fun startRegistration(){
+        var intent = Intent(this, Registration::class.java)
+        startActivity(intent)
+    }
+
     //when the app has stopped and restarted, check if someone is logged in with google account
     override fun onStart() {
-        super.onStart()
         var account:GoogleSignInAccount? = GoogleSignIn.getLastSignedInAccount(this)
         if (account != null){
-            val intent = Intent(this, MainActivity::class.java)
-            startActivity(intent)
+            startActivity(Intent(this, MainActivity::class.java))
         }
+        super.onStart()
+    }
+    /*
+     integrate google sign in
+     Configure sign-in to request the user's ID, email address, and basic
+     profile. ID and basic profile are included in DEFAULT_SIGN_IN.
+     Build a GoogleSignInClient with the options specified by gso.
+     */
+    fun googleSignIn(){
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestEmail()
+            .build()
+        val mGoogleSignInClient = GoogleSignIn.getClient(this, gso)
+        val signInIntent = mGoogleSignInClient.signInIntent
+        startActivityForResult(signInIntent, RC_SIGN_IN)
+
     }
 
 }

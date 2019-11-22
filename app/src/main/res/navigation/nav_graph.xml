@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/cameraView">
+    <fragment
+        android:id="@+id/cameraView"
+        android:name="com.example.library.CameraView_fragment"
+        android:label="fragment_camera_view_fragment"
+        tools:layout="@layout/fragment_camera_view_fragment" />
+    <fragment
+        android:id="@+id/favoriteList"
+        android:name="com.example.library.FavoriteList_fragment"
+        android:label="fragment_favorite_list_fragment"
+        tools:layout="@layout/fragment_favorite_list_fragment" />
+    <fragment
+        android:id="@+id/account"
+        android:name="com.example.library.Settings_fragment"
+        android:label="fragment_settings_fragment"
+        tools:layout="@layout/fragment_settings_fragment" />
+</navigation>

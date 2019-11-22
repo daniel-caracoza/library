@@ -11,4 +11,18 @@
     <string name="login_failed">"Login failed"</string>
     <string name="google">Sign in with Google</string>
     <string name="sign_up">Sign Up</string>
+    <string name="account_exists">Already have an account? Sign in</string>
+    <string name="show_prices">Toggle Price</string>
+    <string name="show_review">Toggle Reviews</string>
+    <string name="show_recommendations">Toggle Recommendations</string>
+    <string name="favorite">Favorites</string>
+    <string name="title_camera">Camera View</string>
+    <string name="title_account">Account</string>
+    <string name="acct_name">Account Name</string>
+    <string name="acct_email">Account Email</string>
+    <string name="logout">Logout</string>
+    <string name="uri_placeholder">Uri placeholder</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
 </resources>
