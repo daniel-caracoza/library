@@ -46,7 +46,10 @@ class Settings_fragment : Fragment(), View.OnClickListener {
 
     override fun onClick(v: View?) {
         when(v?.id){
-            R.id.logout -> {userLogout()}
+            R.id.logout -> {
+                userLogout()
+                activity!!.finish()
+            }
         }
     }
 
@@ -63,8 +66,17 @@ class Settings_fragment : Fragment(), View.OnClickListener {
 
     private fun googleAccount(){
         var account:GoogleSignInAccount? = GoogleSignIn.getLastSignedInAccount(activity)
-        acct_name.text = account?.displayName
-        acct_email.text = account?.email
-        Glide.with(this).load(account?.photoUrl).apply(RequestOptions.circleCropTransform()).into(profile_image)
+        var user:User? = activity!!.intent.getParcelableExtra("user")
+        if(account != null) {
+            acct_name.text = account?.displayName
+            acct_email.text = account?.email
+            Glide.with(this).load(account?.photoUrl).apply(RequestOptions.circleCropTransform())
+                .into(profile_image)
+        }
+        else {
+            acct_name.text = user?.fullname
+            acct_email.text = user?.userName
+            profile_image.setImageResource(R.drawable.ic_account2)
+        }
     }
 }
