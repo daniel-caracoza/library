@@ -1,7 +1,6 @@
 package com.example.library
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
@@ -25,6 +24,8 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
     private lateinit var sign_in_button: SignInButton
     private lateinit var sign_up_button: Button
     private var RC_SIGN_IN = 0
+    private lateinit var db: AppDatabase
+    private lateinit var userDao: UserDao
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,6 +33,11 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
         setSupportActionBar(findViewById(R.id.login_toolbar))
         initViews()
         initListeners()
+        db = Room.databaseBuilder(
+            applicationContext,
+            AppDatabase::class.java, "local_db"
+        ).allowMainThreadQueries().build()
+        userDao = db.userDao()
     }
     override fun onClick(v:View?){
         when(v?.id){
@@ -77,22 +83,20 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
         loginButton.setOnClickListener(this)
         sign_in_button.setOnClickListener(this)
     }
-    fun userLogin(){
+    private fun userLogin(){
         var uname = username.text.toString()
-        var pwd = password.text.toString()
-        var db = Room.databaseBuilder(
-            applicationContext,
-            AppDatabase::class.java, "local_db"
-        ).allowMainThreadQueries().build()
-        var userDao = db.userDao()
-        if(userDao.findUser(uname, pwd) != null){
-            print(userDao.findUser(uname, pwd))
-            val intent = Intent(this, MainActivity::class.java)
+        var pwd = HashUtils.sha1(password.text.toString())
+        var foundUser = userDao.findUser(uname, pwd)
+        if(foundUser != null){
+            val intent = Intent(this, MainActivity::class.java).apply {
+                putExtra("user", foundUser)
+            }
             startActivity(intent)
+            finish()
         }
     }
 
-    fun startRegistration(){
+    private fun startRegistration(){
         var intent = Intent(this, Registration::class.java)
         startActivity(intent)
     }
@@ -102,6 +106,7 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
         var account:GoogleSignInAccount? = GoogleSignIn.getLastSignedInAccount(this)
         if (account != null){
             startActivity(Intent(this, MainActivity::class.java))
+            finish()
         }
         super.onStart()
     }
@@ -111,14 +116,13 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
      profile. ID and basic profile are included in DEFAULT_SIGN_IN.
      Build a GoogleSignInClient with the options specified by gso.
      */
-    fun googleSignIn(){
+    private fun googleSignIn(){
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
             .build()
         val mGoogleSignInClient = GoogleSignIn.getClient(this, gso)
         val signInIntent = mGoogleSignInClient.signInIntent
         startActivityForResult(signInIntent, RC_SIGN_IN)
-
     }
 
 }
