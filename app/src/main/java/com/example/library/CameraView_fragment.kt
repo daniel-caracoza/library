@@ -1,6 +1,7 @@
 package com.example.library
 
 
+import android.content.pm.PackageManager
 import android.graphics.Matrix
 import android.os.Bundle
 import android.util.DisplayMetrics
@@ -9,10 +10,12 @@ import android.util.Size
 import android.view.*
 import android.widget.TextView
 import androidx.camera.core.*
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.google.firebase.ml.vision.FirebaseVision
 import com.google.firebase.ml.vision.common.FirebaseVisionImage
 import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata
+import com.google.firebase.ml.vision.label.FirebaseVisionOnDeviceImageLabelerOptions
 import com.google.firebase.ml.vision.text.FirebaseVisionText
 import kotlinx.android.synthetic.main.fragment_camera_view_fragment.*
 import java.nio.ByteBuffer
@@ -168,26 +171,46 @@ class CameraView_fragment : Fragment() {
                     .setRotation(degreesToFirebaseRotation(rotationDegrees))
                     .build()
                 val image = FirebaseVisionImage.fromByteArray(data, metadata)
-                val detector = FirebaseVision.getInstance()
-                    .onDeviceTextRecognizer
-                detector.processImage(image)
-                    .addOnSuccessListener { firebaseVisionText: FirebaseVisionText ->
-                        //          // Task completed successfully
-                        // ...
-                        val resultText = firebaseVisionText.textBlocks
-                        for (block in resultText) {
-                            val textar = mutableSetOf<String>();
-                            val blockText = block.text
-                            Log.d("MLApp", "Text: $blockText")
-                            textar.add(blockText)
-                            var testst = textar.joinToString(" ")
-                            text.text = testst
+                val options = FirebaseVisionOnDeviceImageLabelerOptions.Builder()
+                    .setConfidenceThreshold(0.7f)
+                    .build()
+                val labeler = FirebaseVision.getInstance().getOnDeviceImageLabeler(options)
+                labeler.processImage(image)
+                    .addOnSuccessListener { labels ->
+                        for (label in labels) {
+                            val text = label.text
+                            val entityId = label.entityId
+                            val confidence = label.confidence
+                            Log.d("Label", text)
+                            if (text == "Poster"){
+                                val detector = FirebaseVision.getInstance()
+                                    .onDeviceTextRecognizer
+                                detector.processImage(image)
+                                    .addOnSuccessListener { firebaseVisionText: FirebaseVisionText ->
+                                        //          // Task completed successfully
+                                        // ...
+                                        val resultText = firebaseVisionText.textBlocks
+                                        for (block in resultText) {
+                                            val textar = mutableSetOf<String>();
+                                            val blockText = block.text
+                                            Log.d("MLApp", "Text: $blockText")
+                                            textar.add(blockText)
+                                            var testst = textar.joinToString(" ")
+                                            this@CameraView_fragment.text.text = testst
+                                        }
+                                    }
+                                    .addOnFailureListener { e ->
+                                        // Task failed with an exception
+                                        //                  // ...
+                                    }
+                            }
                         }
                     }
                     .addOnFailureListener { e ->
                         // Task failed with an exception
-                        //                  // ...
+                        // ...
                     }
+
             }
         }
     }
