@@ -29,6 +29,12 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+    dataBinding {
+        enabled = true
+    }
 }
 
 dependencies {
@@ -74,6 +80,12 @@ dependencies {
     //Glide-for processing Uri image
     implementation 'com.github.bumptech.glide:glide:4.10.0'
     kapt 'com.github.bumptech.glide:compiler:4.10.0'
+
+    //okhttp3
+    implementation 'com.squareup.okhttp3:okhttp:4.2.1'
+
+    //gson
+    implementation 'com.google.code.gson:gson:2.8.6'
 
 }
 

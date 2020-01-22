@@ -8,7 +8,12 @@
         android:id="@+id/cameraView"
         android:name="com.example.library.CameraView_fragment"
         android:label="fragment_camera_view_fragment"
-        tools:layout="@layout/fragment_camera_view_fragment" />
+        tools:layout="@layout/fragment_camera_view_fragment" >
+        <action
+            android:id="@+id/action_cameraView_to_bookInformation"
+            app:destination="@id/bookInformation" />
+    </fragment>
+
     <fragment
         android:id="@+id/favoriteList"
         android:name="com.example.library.FavoriteList_fragment"
@@ -19,4 +24,16 @@
         android:name="com.example.library.Settings_fragment"
         android:label="fragment_settings_fragment"
         tools:layout="@layout/fragment_settings_fragment" />
+
+    <fragment
+        android:id="@+id/bookInformation"
+        android:name="com.example.library.BookInformation"
+        android:label="fragment_book_information"
+        tools:layout="@layout/fragment_book_information">
+        <argument
+            android:name="bookTitle"
+            android:defaultValue="None"/>
+
+    </fragment>
+
 </navigation>
