@@ -16,6 +16,7 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.ar.core.ArCoreApk
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.app_toolbar.view.*
 
@@ -32,6 +33,10 @@ class MainActivity : AppCompatActivity() {
                 Manifest.permission.READ_CONTACTS)
             != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), 0)
+        }
+        val install = ArCoreApk.getInstance().requestInstall(this, true)
+        if(install != ArCoreApk.InstallStatus.INSTALLED){
+            ArCoreApk.getInstance().requestInstall(this, true)
         }
     }
 

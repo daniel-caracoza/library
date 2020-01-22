@@ -13,6 +13,10 @@ import androidx.camera.core.*
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.google.firebase.ml.vision.FirebaseVision
+import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcode
+import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcode.FORMAT_ALL_FORMATS
+import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcode.TYPE_ISBN
+import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcodeDetectorOptions
 import com.google.firebase.ml.vision.common.FirebaseVisionImage
 import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata
 import com.google.firebase.ml.vision.label.FirebaseVisionOnDeviceImageLabelerOptions
@@ -52,7 +56,6 @@ class CameraView_fragment : Fragment() {
 
         val displayMetrics = DisplayMetrics().also { cameraView.display.getRealMetrics(it) }
         val screenSize = Size(displayMetrics.widthPixels, displayMetrics.heightPixels)
-        //val aspectRatio = Rational(displayMetrics.widthPixels, displayMetrics.heightPixels)
         val aspectRatio = AspectRatio.RATIO_16_9
         val rotation = cameraView.display.rotation
 
@@ -65,7 +68,7 @@ class CameraView_fragment : Fragment() {
     fun buildPreviewUseCase(screenSize: Size, aspectRatio: AspectRatio, rotation: Int): Preview {
         val previewConfig = PreviewConfig.Builder()
             .setTargetRotation(rotation)
-            .setTargetResolution(Size(640, 480))
+            .setTargetResolution(Size(screenSize.width, screenSize.height))
             .setLensFacing(CameraX.LensFacing.BACK)
             .build()
 
@@ -124,17 +127,6 @@ class CameraView_fragment : Fragment() {
             else -> throw Exception("Rotation must be 0, 90, 180, or 270.")
         }
 
-        /**
-         * Helper extension function used to extract a byte array from an
-         * image plane buffer
-         */
-        private fun ByteBuffer.toByteArray(): ByteArray {
-            rewind()    // Rewind the buffer to zero
-            val data = ByteArray(remaining())
-            get(data)   // Copy the buffer into a byte array
-            return data // Return the byte array
-        }
-
         override fun analyze(image: ImageProxy, rotationDegrees: Int) {
             val currentTimestamp = System.currentTimeMillis()
             // Calculate the average luma no more often than every second
@@ -154,8 +146,6 @@ class CameraView_fragment : Fragment() {
                 u.buffer.get(data, Yb, Ub)
                 v.buffer.get(data, Yb + Ub, Vb)
                 val buffer = image.planes[0].buffer
-                // Extract image data from callback object
-                //val data = buffer.toByteArray()
                 // Convert the data into an array of pixel values
                 val pixels = data.map { it.toInt() and 0xFF }
                 //              // Compute average luminance for the image
@@ -171,6 +161,19 @@ class CameraView_fragment : Fragment() {
                     .setRotation(degreesToFirebaseRotation(rotationDegrees))
                     .build()
                 val image = FirebaseVisionImage.fromByteArray(data, metadata)
+                val optionsB = FirebaseVisionBarcodeDetectorOptions.Builder()
+                    .setBarcodeFormats(
+                        FORMAT_ALL_FORMATS
+                    ).build()
+                val barcodeDetector = FirebaseVision.getInstance().getVisionBarcodeDetector(optionsB)
+                barcodeDetector.detectInImage(image).addOnSuccessListener{
+                        barcodes ->
+                    for (barcode in barcodes){
+                        val rawValue = barcode.rawValue
+                        Log.d("ISBN", rawValue.toString())
+                        this@CameraView_fragment.text.text = rawValue
+                    }
+                }
                 val options = FirebaseVisionOnDeviceImageLabelerOptions.Builder()
                     .setConfidenceThreshold(0.7f)
                     .build()
@@ -179,19 +182,17 @@ class CameraView_fragment : Fragment() {
                     .addOnSuccessListener { labels ->
                         for (label in labels) {
                             val text = label.text
-                            val entityId = label.entityId
-                            val confidence = label.confidence
                             Log.d("Label", text)
                             if (text == "Poster"){
                                 val detector = FirebaseVision.getInstance()
                                     .onDeviceTextRecognizer
                                 detector.processImage(image)
                                     .addOnSuccessListener { firebaseVisionText: FirebaseVisionText ->
-                                        //          // Task completed successfully
-                                        // ...
+                                        // Task completed successfully
+                                        val textar = mutableSetOf<String>()
                                         val resultText = firebaseVisionText.textBlocks
                                         for (block in resultText) {
-                                            val textar = mutableSetOf<String>();
+                                            val box = block.boundingBox
                                             val blockText = block.text
                                             Log.d("MLApp", "Text: $blockText")
                                             textar.add(blockText)
