@@ -8,6 +8,7 @@ import android.util.DisplayMetrics
 import android.util.Log
 import android.util.Size
 import android.view.*
+import android.widget.Switch
 import android.widget.TextView
 import androidx.camera.core.*
 import androidx.core.content.ContextCompat
@@ -25,6 +26,9 @@ import kotlinx.android.synthetic.main.fragment_camera_view_fragment.*
 import java.nio.ByteBuffer
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import android.widget.CompoundButton
+
+
 
 class CameraView_fragment : Fragment() {
 
@@ -32,6 +36,8 @@ class CameraView_fragment : Fragment() {
     private val executor = Executors.newSingleThreadExecutor()
     private lateinit var textShow: TextView
     private lateinit var parent: ViewParent
+    private lateinit var switch: Switch
+    var switchNum = 2
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -42,6 +48,10 @@ class CameraView_fragment : Fragment() {
 
         cameraView = view.findViewById(R.id.view_finder)
         textShow = view.findViewById(R.id.text)
+        switch = view.findViewById(R.id.barcodeSwitch)
+        switch?.setOnCheckedChangeListener{ _ , isChecked ->
+            this.switchNum = if (isChecked) 1 else 2
+        }
         parent = cameraView.parent
 
         cameraView.post {
@@ -161,17 +171,19 @@ class CameraView_fragment : Fragment() {
                     .setRotation(degreesToFirebaseRotation(rotationDegrees))
                     .build()
                 val image = FirebaseVisionImage.fromByteArray(data, metadata)
-                val optionsB = FirebaseVisionBarcodeDetectorOptions.Builder()
-                    .setBarcodeFormats(
-                        FORMAT_ALL_FORMATS
-                    ).build()
-                val barcodeDetector = FirebaseVision.getInstance().getVisionBarcodeDetector(optionsB)
-                barcodeDetector.detectInImage(image).addOnSuccessListener{
-                        barcodes ->
-                    for (barcode in barcodes){
-                        val rawValue = barcode.rawValue
-                        Log.d("ISBN", rawValue.toString())
-                        this@CameraView_fragment.text.text = rawValue
+                if(this@CameraView_fragment.switchNum == 2) {
+                    val optionsB = FirebaseVisionBarcodeDetectorOptions.Builder()
+                        .setBarcodeFormats(
+                            FORMAT_ALL_FORMATS
+                        ).build()
+                    val barcodeDetector =
+                        FirebaseVision.getInstance().getVisionBarcodeDetector(optionsB)
+                    barcodeDetector.detectInImage(image).addOnSuccessListener { barcodes ->
+                        for (barcode in barcodes) {
+                            val rawValue = barcode.rawValue
+                            Log.d("ISBN", rawValue.toString())
+                            this@CameraView_fragment.text.text = rawValue
+                        }
                     }
                 }
                 val options = FirebaseVisionOnDeviceImageLabelerOptions.Builder()
