@@ -203,14 +203,31 @@ class CameraView_fragment : Fragment() {
                                         // Task completed successfully
                                         val textar = mutableSetOf<String>()
                                         val resultText = firebaseVisionText.textBlocks
+                                        val bookMap = mutableMapOf<Int, String>()
                                         for (block in resultText) {
-                                            val box = block.boundingBox
-                                            val blockText = block.text
-                                            Log.d("MLApp", "Text: $blockText")
-                                            textar.add(blockText)
-                                            var testst = textar.joinToString(" ")
-                                            this@CameraView_fragment.text.text = testst
+                                            //val lines = block.lines
+                                            //for(line in lines){
+                                                val box = block.boundingBox?.height()
+                                                val blockText = block.text
+                                                if(box != null){
+                                                    bookMap.put(box, blockText)
+                                                }
+                                                //Log.d("MLApp", "Text: $blockText")
+                                            //}
+
+
+                                            //textar.add(blockText)
+                                            //var testst = textar.joinToString(" ")
+                                            //this@CameraView_fragment.text.text = testst
                                         }
+                                        val sortedBookMap = bookMap.toSortedMap()
+                                        var valueOne = sortedBookMap.lastKey()
+                                        val stringOne = sortedBookMap.get(valueOne)
+                                        sortedBookMap.remove(valueOne)
+                                        valueOne = sortedBookMap.lastKey()
+                                        val stringTwo = sortedBookMap.get(valueOne)
+                                        this@CameraView_fragment.text.text = stringOne + "\n" + stringTwo
+                                        Log.d("BookStrings: ", stringOne)
                                     }
                                     .addOnFailureListener { e ->
                                         // Task failed with an exception
