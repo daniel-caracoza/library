@@ -1,4 +1,4 @@
-package com.example.library
+package com.example.library.home
 
 
 import android.os.Bundle
@@ -9,6 +9,8 @@ import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.ViewModelProviders
 import androidx.navigation.fragment.navArgs
+import com.example.library.home.BookInformationArgs
+import com.example.library.R
 import com.example.library.databinding.FragmentBookInformationBinding
 
 /**
@@ -31,8 +33,10 @@ class BookInformation : Fragment() {
             container,
             false
         )
-        val viewModelFactory = BookViewModelFactory(args.bookTitle)
-        bookInfoViewModel = ViewModelProviders.of(this, viewModelFactory).get(BookInformationViewModel::class.java)
+        val viewModelFactory =
+            BookViewModelFactory(args.bookTitle)
+        bookInfoViewModel = ViewModelProviders.of(this, viewModelFactory).get(
+            BookInformationViewModel::class.java)
         binding.bookInfoViewModel = bookInfoViewModel
         binding.lifecycleOwner = this
         return binding.root

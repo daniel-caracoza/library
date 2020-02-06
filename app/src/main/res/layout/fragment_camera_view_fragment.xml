@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".CameraView_fragment">
+    tools:context=".home.CameraView_fragment">
 
     <TextureView
         android:id="@+id/view_finder"

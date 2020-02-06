@@ -87,6 +87,14 @@ dependencies {
     //gson
     implementation 'com.google.code.gson:gson:2.8.6'
 
+    //retrofit
+    implementation "com.squareup.retrofit2:retrofit:$version_retrofit"
+
+    //tikxml
+    implementation 'com.tickaroo.tikxml:retrofit-converter:0.8.13'
+    implementation 'com.tickaroo.tikxml:annotation:0.8.13'
+    implementation 'com.tickaroo.tikxml:core:0.8.13'
+    kapt 'com.tickaroo.tikxml:processor:0.8.13'
 }
 
 apply plugin: 'com.google.gms.google-services'

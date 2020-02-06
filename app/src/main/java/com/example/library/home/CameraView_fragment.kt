@@ -1,4 +1,4 @@
-package com.example.library
+package com.example.library.home
 
 
 import android.graphics.Matrix
@@ -12,6 +12,8 @@ import android.widget.TextView
 import androidx.camera.core.*
 import androidx.fragment.app.Fragment
 import androidx.navigation.findNavController
+import com.example.library.home.CameraView_fragmentDirections
+import com.example.library.R
 import com.google.firebase.ml.vision.FirebaseVision
 import com.google.firebase.ml.vision.common.FirebaseVisionImage
 import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata
@@ -55,7 +57,10 @@ class CameraView_fragment : Fragment(), View.OnClickListener {
     override fun onClick(v: View?) {
         when(v?.id){
             R.id.bookButton -> {
-                val action = CameraView_fragmentDirections.actionCameraViewToBookInformation(extractedText)
+                val action =
+                    CameraView_fragmentDirections.actionCameraViewToBookInformation(
+                        extractedText
+                    )
                 v!!.findNavController().navigate(action)
 
             }

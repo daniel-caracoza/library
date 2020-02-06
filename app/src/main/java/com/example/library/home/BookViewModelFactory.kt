@@ -1,4 +1,4 @@
-package com.example.library
+package com.example.library.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -9,7 +9,9 @@ class BookViewModelFactory(
     @Suppress("Unchecked cast")
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {
         if(modelClass.isAssignableFrom(BookInformationViewModel::class.java)){
-            return BookInformationViewModel(extractedText) as T
+            return BookInformationViewModel(
+                extractedText
+            ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
