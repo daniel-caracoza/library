@@ -1,5 +1,6 @@
 package com.example.library
 
+import android.util.Log
 import com.example.library.network.GoodreadsApiService.GoodreadsApi
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.CoroutineScope
@@ -8,6 +9,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.hamcrest.CoreMatchers.equalTo
+import org.junit.Assert.*
+
 
 @RunWith(AndroidJUnit4::class)
 class GoodReadsRequestTest {

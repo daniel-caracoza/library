@@ -9,7 +9,6 @@ import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.ViewModelProviders
 import androidx.navigation.fragment.navArgs
-import com.example.library.home.BookInformationArgs
 import com.example.library.R
 import com.example.library.databinding.FragmentBookInformationBinding
 

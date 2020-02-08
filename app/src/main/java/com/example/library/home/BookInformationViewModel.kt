@@ -3,10 +3,11 @@ package com.example.library.home
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.example.library.network.Book
+import com.example.library.network.GoogleBook
 import com.example.library.network.GoodreadsApiService.GoodreadsApi
 import com.example.library.network.GoodreadsResponse
 import com.example.library.network.Items
+import com.example.library.network.Search
 import com.google.gson.GsonBuilder
 import kotlinx.coroutines.*
 import okhttp3.OkHttpClient
@@ -79,12 +80,14 @@ class BookInformationViewModel(extractedText: String): ViewModel() {
             val id = searchRequest()
             val volume = volumeRequest(id)
             //updateUI(volume)
-            val goodreadsResponse = goodReadsRequest(extractedText)
-            _reviewHtml.value = link
+            val goodreadsSearchResponse = goodReadsSearchRequest(extractedText)
+            //val goodreadsAuthorsBooksResponse = goodReadsAuthorBooksRequest(goodreadsSearchResponse.search.works[0].best_book.authorId)
+            //val goodreadsReviewsAndGenres = goodReadsReviewsAndGenresRequest(goodreadsSearchResponse.search.works[0].best_book.id)
+            //_reviewHtml.value = link
         }
     }
 
-    private fun updateUI(volume: Book){
+    private fun updateUI(volume: GoogleBook){
         _publisher.value = volume.volumeInfo.publisher
         _title.value = volume.volumeInfo.title
         _description.value = volume.volumeInfo.description
@@ -114,12 +117,12 @@ class BookInformationViewModel(extractedText: String): ViewModel() {
     /*
     searches api with a volume id and grab the information needed to update UI
      */
-    private suspend fun volumeRequest(bookId: String): Book {
+    private suspend fun volumeRequest(bookId: String): GoogleBook {
         return withContext(Dispatchers.IO) {
             val url = "https://www.googleapis.com/books/v1/volumes/$bookId?key=$googleApiKey"
             val json = fetchJSON(url)
             val gson = GsonBuilder().create()
-            val volume = gson.fromJson(json, Book::class.java)
+            val volume = gson.fromJson(json, GoogleBook::class.java)
 
             volume
         }
@@ -137,12 +140,41 @@ class BookInformationViewModel(extractedText: String): ViewModel() {
             response.body?.string()
         }
     }
-
-    private suspend fun goodReadsRequest(keyword: String): GoodreadsResponse {
+    /*
+    @return a GoodsreadsResponse which contains a list of works(books) author name & id.
+    @param the extracted text from the camera view.
+     */
+    private suspend fun goodReadsSearchRequest(keyword: String): GoodreadsResponse {
         return withContext(Dispatchers.IO) {
             val parameters = mapOf("key" to goodreadsApiKey, "q" to keyword)
 
-            GoodreadsApi.retrofitService.getProperties(parameters)
+            GoodreadsApi.retrofitService.getSearchProperties(parameters)
+        }
+    }
+    /*
+    @return a GoodsreadsResponse which contains a list of books by author
+    @param the author id
+     */
+    private suspend fun goodReadsAuthorBooksRequest(authorId: String): GoodreadsResponse {
+        return withContext(Dispatchers.IO){
+            val parameters = mapOf("key" to goodreadsApiKey, "id" to authorId)
+            GoodreadsApi.retrofitService.getAuthorsBooks(parameters)
+        }
+    }
+    /*@return a GoodreadsResponse which contains a list of genres the book belongs to and a review widget in raw html as an iframe, you
+     *you need to display on a webview.
+     */
+    private suspend fun goodReadsReviewsAndGenresRequest(id: Int): GoodreadsResponse {
+        return withContext(Dispatchers.IO){
+            val parameters = mapOf("key" to goodreadsApiKey)
+            GoodreadsApi.retrofitService.getReviewsAndGenres(id ,parameters)
+        }
+    }
+
+    private suspend fun goodReadsReviewsAndGenresRequestByISBN(isbn: String): GoodreadsResponse {
+        return withContext(Dispatchers.IO) {
+            val parameters = mapOf("key" to goodreadsApiKey)
+            GoodreadsApi.retrofitService.getReviewsAndGenresByISBN(isbn, parameters)
         }
     }
 

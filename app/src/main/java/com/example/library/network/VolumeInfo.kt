@@ -1,6 +1,6 @@
 package com.example.library.network
 
-class Book(val volumeInfo: VolumeInfo)
+class GoogleBook(val volumeInfo: VolumeInfo)
 
 class VolumeInfo(val title:String,
                  val subtitle:String,

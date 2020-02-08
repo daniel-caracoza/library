@@ -4,29 +4,25 @@ import com.tickaroo.tikxml.annotation.*
 
 @Xml
 class GoodreadsResponse {
+    @Element
+    lateinit var search: Search
 
-    @Element(
-        typesByElement = arrayOf<ElementNameMatcher>(
-            ElementNameMatcher(type= Author::class),
-            ElementNameMatcher(type= Search::class)
-        )
-    ) lateinit var author: Author
+    @Element
+    lateinit var author: Author
+
+    @Element
+    lateinit var book: Book
 }
-
 @Xml
 class Search {
-    @Element
-    lateinit var results: Results
-}
-
-@Xml
-class Results {
+    @Path("results")
     @Element
     lateinit var works: List<Work>
 }
+
 @Xml
 data class Work (
-    @PropertyElement(name = "id")
+    @PropertyElement
     val id : Int,
 
     @PropertyElement
@@ -47,15 +43,48 @@ data class BestBook(
     @PropertyElement
     val title: String,
 
-    @Element
-    val author: Author
+    @Path("author")
+    @PropertyElement(name = "id")
+    val authorId: String,
+
+    @Path("author")
+    @PropertyElement(name = "name")
+    val name: String
 )
 
 @Xml
-data class Author(
+class Author {
     @PropertyElement
-    val id: Int,
+    var id: Int = 0
 
     @PropertyElement
-    val name: String
-)
+    lateinit var name: String
+
+    @Path("books")
+    @Element
+    lateinit var books: List<Book>
+}
+@Xml
+class Book {
+    @PropertyElement var id: Int = 0
+
+    @PropertyElement lateinit var title: String
+
+    @PropertyElement lateinit var average_rating: String
+
+    @PropertyElement lateinit var isbn: String
+
+    @PropertyElement lateinit var isbn13: String
+
+    @PropertyElement lateinit var reviews_widget: String
+
+    @Path("popular_shelves")
+    @Element
+    lateinit var shelves: List<Shelf>
+}
+
+@Xml
+class Shelf {
+    @Attribute(name = "name")
+    lateinit var name: String
+}
