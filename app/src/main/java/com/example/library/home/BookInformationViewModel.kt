@@ -1,13 +1,16 @@
 package com.example.library.home
 
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
+import com.example.library.BuildConfig
+import com.example.library.database.Favorite
+import com.example.library.database.FavoriteDao
 import com.example.library.network.GoogleBook
 import com.example.library.network.GoodreadsApiService.GoodreadsApi
 import com.example.library.network.GoodreadsResponse
 import com.example.library.network.Items
-import com.example.library.network.Search
 import com.google.gson.GsonBuilder
 import kotlinx.coroutines.*
 import okhttp3.OkHttpClient
@@ -16,15 +19,14 @@ import okhttp3.Response
 import java.lang.StringBuilder
 
 
-class BookInformationViewModel(extractedText: String): ViewModel() {
+class BookInformationViewModel(val userId:Int, val database: FavoriteDao, application: Application,
+                               extractedText: String): AndroidViewModel(application) {
 
-    private val link: String = "<iframe id=\"the_iframe\" src=\"https://www.goodreads.com/api/reviews_widget_iframe?did=DEVELOPER_ID&amp;format=html&amp;isbn=0689840926&amp;links=660&amp;min_rating=&amp;review_back=fff&amp;stars=000&amp;text=000\" width=\"565\" height=\"400\" frameborder=\"0\"></iframe>"
+    private val googleApiKey = BuildConfig.googleKey
 
-    private val googleApiKey:String = "AIzaSyDM_5JXY3Ri95ys83rh_Yln6hkkj-VWBEc"
+    private val goodreadsApiKey = BuildConfig.goodreadsKey
 
-    private val goodreadsApiKey = "g26bxZX7XG4NAXB8PYdzsg"
-
-    private val goodreadsSecret = "NFweT8Zkh84ykbjZXydzTuwPu6qFA5mCWhhzJbawKRI"
+    private val goodreadsSecret = BuildConfig.goodreadsSecret
 
     private var viewModelJob = Job()
 
@@ -34,6 +36,10 @@ class BookInformationViewModel(extractedText: String): ViewModel() {
 
     val title: LiveData<String>
         get() = _title
+
+    private var bookid: Int = 0
+
+    private lateinit var image: String
 
     private val _subtitle = MutableLiveData<String>()
 
@@ -77,12 +83,15 @@ class BookInformationViewModel(extractedText: String): ViewModel() {
 
     private fun apiRequests(extractedText: String){
         uiScope.launch {
-            val id = searchRequest()
-            val volume = volumeRequest(id)
+            //val id = searchRequest()
+            //val volume = volumeRequest(id)
             //updateUI(volume)
             val goodreadsSearchResponse = goodReadsSearchRequest(extractedText)
             //val goodreadsAuthorsBooksResponse = goodReadsAuthorBooksRequest(goodreadsSearchResponse.search.works[0].best_book.authorId)
-            //val goodreadsReviewsAndGenres = goodReadsReviewsAndGenresRequest(goodreadsSearchResponse.search.works[0].best_book.id)
+            val goodreadsReviewsAndGenres = goodReadsReviewsAndGenresRequest(goodreadsSearchResponse.search.works[0].best_book.id)
+            _description.value = goodreadsReviewsAndGenres.book.description
+            image = goodreadsReviewsAndGenres.book.small_image_url
+            updateUIGRApi(goodreadsSearchResponse)
             //_reviewHtml.value = link
         }
     }
@@ -99,6 +108,12 @@ class BookInformationViewModel(extractedText: String): ViewModel() {
         }
         _author.value = sb.toString()
 
+    }
+
+    private fun updateUIGRApi(response: GoodreadsResponse){
+        _title.value = response.search.works[0].best_book.title
+        _author.value = response.search.works[0].best_book.name
+        bookid = response.search.works[0].best_book.id
     }
     /*
     searches google books with the text extracted using the url which is a json endpoint
@@ -167,7 +182,7 @@ class BookInformationViewModel(extractedText: String): ViewModel() {
     private suspend fun goodReadsReviewsAndGenresRequest(id: Int): GoodreadsResponse {
         return withContext(Dispatchers.IO){
             val parameters = mapOf("key" to goodreadsApiKey)
-            GoodreadsApi.retrofitService.getReviewsAndGenres(id ,parameters)
+            GoodreadsApi.retrofitService.getReviewsAndGenres(id, parameters)
         }
     }
 
@@ -177,7 +192,20 @@ class BookInformationViewModel(extractedText: String): ViewModel() {
             GoodreadsApi.retrofitService.getReviewsAndGenresByISBN(isbn, parameters)
         }
     }
+    fun addFavoriteStart(){
+        uiScope.launch {
+            addFavorite()
+        }
 
+    }
+    private suspend fun addFavorite(){
+        withContext(Dispatchers.IO){
+            val favorite = Favorite(bookid, userId, _author.value!!, title.value!!, _description.value!!, image)
+            database.insertAll(favorite)
+        }
+
+
+    }
     override fun onCleared() {
         super.onCleared()
         viewModelJob.cancel()

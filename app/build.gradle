@@ -18,6 +18,11 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        manifestPlaceholders = [host: "goodreads", scheme: "oauth"]
+        buildConfigField("String", "googleKey", googleKey)
+        buildConfigField("String", "goodreadsKey", goodreadsKey)
+        buildConfigField("String", "goodreadsSecret", goodreadsSecret)
+        buildConfigField("String", "goodreadsCallback", "\"oauth://goodreads\"")
     }
     buildTypes {
         release {
@@ -95,6 +100,9 @@ dependencies {
     implementation 'com.tickaroo.tikxml:annotation:0.8.13'
     implementation 'com.tickaroo.tikxml:core:0.8.13'
     kapt 'com.tickaroo.tikxml:processor:0.8.13'
+    implementation 'com.github.scribejava:scribejava-apis:6.4.1'
+    implementation 'androidx.recyclerview:recyclerview:1.0.0'
+
 }
 
 apply plugin: 'com.google.gms.google-services'

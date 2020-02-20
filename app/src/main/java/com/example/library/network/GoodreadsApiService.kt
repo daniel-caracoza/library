@@ -1,5 +1,6 @@
 package com.example.library.network
 
+import com.github.scribejava.core.oauth.OAuth10aService
 import com.tickaroo.tikxml.TikXml
 import com.tickaroo.tikxml.retrofit.TikXmlConverterFactory
 import retrofit2.Retrofit
@@ -8,10 +9,6 @@ import retrofit2.http.Path
 import retrofit2.http.QueryMap
 
 private const val BASE_URL = "https://goodreads.com"
-
-private const val goodreadsApiKey = "g26bxZX7XG4NAXB8PYdzsg"
-
-private const val goodreadsSecret = "NFweT8Zkh84ykbjZXydzTuwPu6qFA5mCWhhzJbawKRI"
 
 private val tikXml = TikXml.Builder()
     .exceptionOnUnreadXml(false)
@@ -35,10 +32,13 @@ interface GoodreadsApiService {
     @GET("book/isbn/{isbn}.xml")
     suspend fun getReviewsAndGenresByISBN(@Path("isbn") isbn: String, @QueryMap parameters: Map<String, String>): GoodreadsResponse
 
+
     object GoodreadsApi {
+
+        private lateinit var oauth: OAuth10aService
+
         val retrofitService : GoodreadsApiService by lazy {
             retrofit.create(GoodreadsApiService::class.java)
         }
-
     }
 }

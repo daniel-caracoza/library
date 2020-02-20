@@ -78,6 +78,10 @@ class Book {
 
     @PropertyElement lateinit var reviews_widget: String
 
+    @PropertyElement lateinit var description:String
+
+    @PropertyElement lateinit var small_image_url:String
+
     @Path("popular_shelves")
     @Element
     lateinit var shelves: List<Shelf>
