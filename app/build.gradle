@@ -58,7 +58,10 @@ dependencies {
     implementation 'com.google.ar:core:1.14.0'
     apply plugin: "androidx.navigation.safeargs.kotlin"
     implementation 'com.google.ar.sceneform.ux:sceneform-ux:1.14.0'
-    def room_version = "2.2.1"
+    def room_version = "2.2.3"
+
+    // https://mvnrepository.com/artifact/de.javagl/obj
+    compile group: 'de.javagl', name: 'obj', version: '0.2.1'
 
     implementation "androidx.room:room-runtime:$room_version"
     kapt "androidx.room:room-compiler:$room_version"
@@ -82,3 +85,9 @@ dependencies {
 }
 
 apply plugin: 'com.google.gms.google-services'
+apply plugin: 'com.google.ar.sceneform.plugin'
+
+sceneform.asset('sampledata/models/andy.obj',
+        'default',
+        'sampledata/models/andy.sfa',
+        'src/main/assets/andy')

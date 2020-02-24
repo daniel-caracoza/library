@@ -6,9 +6,9 @@
     app:startDestination="@id/cameraView">
     <fragment
         android:id="@+id/cameraView"
-        android:name="com.example.library.CameraView_fragment"
+        android:name="com.example.library.ArOverlayView"
         android:label="fragment_camera_view_fragment"
-        tools:layout="@layout/fragment_camera_view_fragment" />
+        tools:layout="@layout/aroverlay_layout" />
     <fragment
         android:id="@+id/favoriteList"
         android:name="com.example.library.FavoriteList_fragment"

@@ -27,7 +27,11 @@ import java.nio.ByteBuffer
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import android.widget.CompoundButton
-
+import com.google.ar.core.Session
+import com.google.ar.core.SharedCamera
+import com.google.ar.sceneform.ArSceneView
+import com.google.ar.sceneform.ux.ArFragment
+import java.util.*
 
 
 class CameraView_fragment : Fragment() {
@@ -37,6 +41,7 @@ class CameraView_fragment : Fragment() {
     private lateinit var textShow: TextView
     private lateinit var parent: ViewParent
     private lateinit var switch: Switch
+    //private lateinit var arSceneView: ArSceneView
     var switchNum = 2
 
     override fun onCreateView(
@@ -47,9 +52,10 @@ class CameraView_fragment : Fragment() {
         val view = inflater.inflate(R.layout.fragment_camera_view_fragment, container, false)
 
         cameraView = view.findViewById(R.id.view_finder)
+        //arSceneView = view.findViewById(R.id.ar_scene_view)
         textShow = view.findViewById(R.id.text)
         switch = view.findViewById(R.id.barcodeSwitch)
-        switch?.setOnCheckedChangeListener{ _ , isChecked ->
+        switch.setOnCheckedChangeListener{ _ , isChecked ->
             this.switchNum = if (isChecked) 1 else 2
         }
         parent = cameraView.parent
@@ -68,6 +74,8 @@ class CameraView_fragment : Fragment() {
         val screenSize = Size(displayMetrics.widthPixels, displayMetrics.heightPixels)
         val aspectRatio = AspectRatio.RATIO_16_9
         val rotation = cameraView.display.rotation
+        val session = Session(context, EnumSet.of(Session.Feature.SHARED_CAMERA))
+        val arCam = session.sharedCamera
 
         val previewUseCase = buildPreviewUseCase(screenSize, aspectRatio, rotation)
         val analysUseCase = buildImageAnalysisUseCase(aspectRatio, rotation)
@@ -209,13 +217,15 @@ class CameraView_fragment : Fragment() {
                                             //for(line in lines){
                                                 val box = block.boundingBox?.height()
                                                 val blockText = block.text
-                                                if(box != null){
+                                                var conf: Float = 0.0 as Float
+                                                if(block.confidence != null){
+                                                    conf = block.confidence as Float
+                                                }
+                                                if(box != null && conf > .5){
                                                     bookMap.put(box, blockText)
                                                 }
                                                 //Log.d("MLApp", "Text: $blockText")
                                             //}
-
-
                                             //textar.add(blockText)
                                             //var testst = textar.joinToString(" ")
                                             //this@CameraView_fragment.text.text = testst
