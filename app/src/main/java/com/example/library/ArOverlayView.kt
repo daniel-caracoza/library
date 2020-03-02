@@ -24,7 +24,6 @@ import javax.microedition.khronos.egl.EGLConfig
 
 class ArOverlayView : Fragment(), SurfaceTexture.OnFrameAvailableListener, ImageReader.OnImageAvailableListener, GLSurfaceView.Renderer{
     private lateinit var arSession : Session
-    private lateinit var planeRenderer: PlaneRenderer
     private lateinit var glSurface : GLSurfaceView
     private lateinit var tapHelper : TapHelper
     private lateinit var shader : ShaderUtil
@@ -39,6 +38,7 @@ class ArOverlayView : Fragment(), SurfaceTexture.OnFrameAvailableListener, Image
     private lateinit var displayRotationHelper : DisplayRotationHelper
     private lateinit var previewCaptureRequestBuilder : CaptureRequest.Builder
     private lateinit var trackingStateHelper : TrackingStateHelper
+    private var planeRenderer = PlaneRenderer()
     private var backgroundRenderer = BackgroundRenderer()
     private var pointCloudRenderer = PointCloudRenderer()
     private val anchorMatrix = FloatArray(16)
@@ -46,6 +46,7 @@ class ArOverlayView : Fragment(), SurfaceTexture.OnFrameAvailableListener, Image
     private var arcoreActive = true
     private var isGlAttached = false
     private var surfaceCreated = false
+    private var arMode = true
 
     private val anchors = ArrayList<ColoredAnchor>()
     private var captureSessionChangesPossible = true
@@ -80,7 +81,11 @@ class ArOverlayView : Fragment(), SurfaceTexture.OnFrameAvailableListener, Image
     var cameraSessionStateCallback = object: CameraCaptureSession.StateCallback(){
         override fun onConfigured(session: CameraCaptureSession) {
             captureSession = session
-            setRepeatingCaptureRequest()
+            if (arMode){
+                setRepeatingCaptureRequest()
+            } else {
+                resumeCamera2()
+            }
         }
 
         override fun onReady(session: CameraCaptureSession) {
@@ -131,7 +136,7 @@ class ArOverlayView : Fragment(), SurfaceTexture.OnFrameAvailableListener, Image
     override fun onStart() {
         super.onStart()
         waitUntilCameraCaptureSessionIsActive()
-        //startBackgroundThread()
+        startBackgroundThread()
 
         displayRotationHelper.onResume()
     }
@@ -160,12 +165,12 @@ class ArOverlayView : Fragment(), SurfaceTexture.OnFrameAvailableListener, Image
         GLES20.glClearColor(0f, 0f, 0f, 1.0f)
 
         try{
-            backgroundRenderer.createOnGlThread(this@ArOverlayView.requireContext())
-            planeRenderer.createOnGlThread(this@ArOverlayView.requireContext(), "sampledata/models/trigrid.png")
-            pointCloudRenderer.createOnGlThread(this@ArOverlayView.requireContext())
+            //backgroundRenderer.createOnGlThread(this@ArOverlayView.requireContext())
+            //planeRenderer.createOnGlThread(this@ArOverlayView.requireContext(), "trigrid.png")
+            //pointCloudRenderer.createOnGlThread(this@ArOverlayView.requireContext())
 
-            virtualObject.createOnGlThread(this@ArOverlayView.requireContext(), "sampledata/models/andy.obj", "sampledata/models/andy.png")
-            virtualObject.setMaterialProperties(0.0f, 2.0f, 0.5f, 6.0f)
+            //virtualObject.createOnGlThread(this@ArOverlayView.requireContext(), "andy.obj", "andy.png")
+            //virtualObject.setMaterialProperties(0.0f, 2.0f, 0.5f, 6.0f)
 
             //openCamera()
         } catch (e : IOException){
@@ -191,9 +196,9 @@ class ArOverlayView : Fragment(), SurfaceTexture.OnFrameAvailableListener, Image
 
         trackingStateHelper = TrackingStateHelper(activity as Activity)
 
-        arSession = Session(view.context, EnumSet.of(Session.Feature.SHARED_CAMERA))
+        //arSession = Session(this@ArOverlayView.requireContext(), EnumSet.of(Session.Feature.SHARED_CAMERA))
         openCamera()
-        openCameraForSharing()
+        //openCameraForSharing()
         return view
     }
 
@@ -208,6 +213,30 @@ class ArOverlayView : Fragment(), SurfaceTexture.OnFrameAvailableListener, Image
     override fun onActivityCreated(mState: Bundle?) {
         super.onActivityCreated(mState)
         //glSurface.setRenderer(this@ArOverlayView)
+    }
+
+    override fun onPause() {
+        shouldUpdateSurfaceTexture.set(false)
+        glSurface.onPause()
+        waitUntilCameraCaptureSessionIsActive()
+        displayRotationHelper.onPause()
+        if (arMode) {
+            pauseARCore()
+        }
+        closeCamera()
+        stopBackgroundThread()
+        super.onPause()
+    }
+
+    private fun stopBackgroundThread(){
+        if (backgroundThread != null){
+            backgroundThread.quitSafely()
+            try{
+                backgroundThread.join()
+            } catch (e : InterruptedException) {
+                Log.e("Stop Background", "Interrupted while trying to join background handler thread")
+            }
+        }
     }
 
     private fun setRepeatingCaptureRequest(){
@@ -349,18 +378,34 @@ class ArOverlayView : Fragment(), SurfaceTexture.OnFrameAvailableListener, Image
         super.onResume()
         waitUntilCameraCaptureSessionIsActive()
         startBackgroundThread()
-        //glsurfaceview.onResume()
+        glSurface.onResume()
 
         if(surfaceCreated){
-            //openCamera()
+            openCamera()
         }
 
         displayRotationHelper.onResume()
     }
 
+    private fun closeCamera(){
+        if (captureSession != null){
+            captureSession.close()
+        }
+        if (camDevice != null){
+            waitUntilCameraCaptureSessionIsActive()
+            camDevice.close()
+        }
+        if (cpuImageReader != null){
+            cpuImageReader.close()
+        }
+    }
+
     private fun openCamera(){
             try{
                 arSession = Session(context, EnumSet.of(Session.Feature.SHARED_CAMERA))
+                val config = arSession.config
+                config.focusMode = Config.FocusMode.AUTO
+                arSession.configure(config)
             } catch (e : KeyCharacterMap.UnavailableException){
                 return
             }
@@ -414,6 +459,11 @@ class ArOverlayView : Fragment(), SurfaceTexture.OnFrameAvailableListener, Image
         }
     }
 
+    private fun resumeCamera2(){
+        setRepeatingCaptureRequest()
+        sharedCam.surfaceTexture.setOnFrameAvailableListener(this)
+    }
+
     private fun resumeARCore(){
         if(!arcoreActive){
             try{
@@ -425,6 +475,13 @@ class ArOverlayView : Fragment(), SurfaceTexture.OnFrameAvailableListener, Image
                 Log.e("Resume ARCore: ", "Failed to resume ARCore session", e)
                 return
             }
+        }
+    }
+
+    private fun pauseARCore(){
+        if(arcoreActive){
+            arSession.pause()
+            arcoreActive = false
         }
     }
 }
