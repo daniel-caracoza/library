@@ -1,6 +1,5 @@
 package com.example.library.network
 
-import com.github.scribejava.core.oauth.OAuth10aService
 import com.tickaroo.tikxml.TikXml
 import com.tickaroo.tikxml.retrofit.TikXmlConverterFactory
 import retrofit2.Retrofit
@@ -34,8 +33,6 @@ interface GoodreadsApiService {
 
 
     object GoodreadsApi {
-
-        private lateinit var oauth: OAuth10aService
 
         val retrofitService : GoodreadsApiService by lazy {
             retrofit.create(GoodreadsApiService::class.java)
