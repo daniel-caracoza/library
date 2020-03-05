@@ -1,4 +1,4 @@
-package com.example.library
+package com.example.library.settings
 
 import android.content.Intent
 import android.os.Bundle
@@ -10,12 +10,13 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import com.bumptech.glide.Glide
-import com.bumptech.glide.load.model.GlideUrl
 import com.bumptech.glide.request.RequestOptions
+import com.example.library.R
+import com.example.library.database.User
+import com.example.library.loginFlow.LoginActivity
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.OnCompleteListener
 
 
@@ -66,7 +67,7 @@ class Settings_fragment : Fragment(), View.OnClickListener {
 
     private fun googleAccount(){
         var account:GoogleSignInAccount? = GoogleSignIn.getLastSignedInAccount(activity)
-        var user:User? = activity!!.intent.getParcelableExtra("user")
+        var user: User? = activity!!.intent.getParcelableExtra("user")
         if(account != null) {
             acct_name.text = account?.displayName
             acct_email.text = account?.email

@@ -1,4 +1,4 @@
-package com.example.library
+package com.example.library.loginFlow
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -9,6 +9,11 @@ import androidx.room.Room
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
+import com.example.library.utils.HashUtils
+import com.example.library.R
+import com.example.library.database.AppDatabase
+import com.example.library.database.User
+import com.example.library.database.UserDao
 
 
 class Registration : AppCompatActivity(), View.OnClickListener{
@@ -17,8 +22,8 @@ class Registration : AppCompatActivity(), View.OnClickListener{
     private lateinit var password: EditText
     private lateinit var registerButton: Button
     private lateinit var account_exists: TextView
-    private lateinit var db:AppDatabase
-    private lateinit var userDao:UserDao
+    private lateinit var db: AppDatabase
+    private lateinit var userDao: UserDao
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,7 +62,8 @@ class Registration : AppCompatActivity(), View.OnClickListener{
         val pwd = HashUtils.sha1(password.text.toString())
         if(!(!validatePassword() && !validateUsername(uname) && !validateName())) {
             if (userDao.findUser(uname, pwd) == null) {
-                val user = User(0, fname, uname, pwd)
+                val user =
+                    User(0, fname, uname, pwd)
                 userDao.insertAll(user)
                 Toast.makeText(this, "Account created.", Toast.LENGTH_LONG).show()
                 finish()

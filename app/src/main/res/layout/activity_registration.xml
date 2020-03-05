@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".Registration">
+    tools:context=".loginFlow.Registration">
     <include
         android:id="@+id/login_toolbar"
         layout="@layout/app_toolbar"/>

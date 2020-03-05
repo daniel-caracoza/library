@@ -1,4 +1,4 @@
-package com.example.library
+package com.example.library.home
 
 
 import android.graphics.Matrix
@@ -7,9 +7,13 @@ import android.util.DisplayMetrics
 import android.util.Log
 import android.util.Size
 import android.view.*
+import android.widget.Button
 import android.widget.TextView
 import androidx.camera.core.*
 import androidx.fragment.app.Fragment
+import androidx.navigation.findNavController
+import com.example.library.home.CameraView_fragmentDirections
+import com.example.library.R
 import com.google.firebase.ml.vision.FirebaseVision
 import com.google.firebase.ml.vision.common.FirebaseVisionImage
 import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata
@@ -19,12 +23,13 @@ import java.nio.ByteBuffer
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
-class CameraView_fragment : Fragment() {
+class CameraView_fragment : Fragment(), View.OnClickListener {
 
     private lateinit var cameraView: TextureView
     private val executor = Executors.newSingleThreadExecutor()
     private lateinit var textShow: TextView
     private lateinit var parent: ViewParent
+    private lateinit var extractedText: String
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -43,6 +48,25 @@ class CameraView_fragment : Fragment() {
 
         return view
     }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        view.findViewById<Button>(R.id.bookButton).setOnClickListener(this)
+    }
+
+    override fun onClick(v: View?) {
+        when(v?.id){
+            R.id.bookButton -> {
+                val action =
+                    CameraView_fragmentDirections.actionCameraViewToBookInformation(
+                        extractedText
+                    )
+                v!!.findNavController().navigate(action)
+
+            }
+        }
+    }
+
 
     private fun setUpCameraX() {
         CameraX.unbindAll()
@@ -182,6 +206,7 @@ class CameraView_fragment : Fragment() {
                             textar.add(blockText)
                             var testst = textar.joinToString(" ")
                             text.text = testst
+                            extractedText = testst
                         }
                     }
                     .addOnFailureListener { e ->

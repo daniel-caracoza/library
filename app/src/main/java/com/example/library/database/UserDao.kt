@@ -1,9 +1,10 @@
-package com.example.library
+package com.example.library.database
 
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
+import com.example.library.database.User
 
 
 @Dao

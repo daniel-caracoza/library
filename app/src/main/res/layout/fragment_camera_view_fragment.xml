@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".CameraView_fragment">
+    tools:context=".home.CameraView_fragment">
 
     <TextureView
         android:id="@+id/view_finder"
@@ -19,5 +19,11 @@
         android:text="@string/app_name"
         android:textAlignment="center"
         android:gravity="center"/>
+
+    <Button
+        android:id="@+id/bookButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Find Book" />
 
 </FrameLayout>

@@ -1,4 +1,4 @@
-package com.example.library
+package com.example.library.database
 
 import android.os.Parcelable
 import androidx.room.ColumnInfo
@@ -14,4 +14,6 @@ data class User(
     @ColumnInfo(name = "username") val userName:String?,
     @ColumnInfo(name = "password") val password:String?
 ):Parcelable
+
+
 
