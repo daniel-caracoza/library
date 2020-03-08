@@ -1,6 +1,8 @@
 package com.example.library.settings
 
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -12,7 +14,9 @@ import android.widget.TextView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
 import com.example.library.R
+import com.example.library.database.AppDatabase
 import com.example.library.database.User
+import com.example.library.database.UserDao
 import com.example.library.loginFlow.LoginActivity
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
@@ -22,16 +26,21 @@ import com.google.android.gms.tasks.OnCompleteListener
 
 
 class Settings_fragment : Fragment(), View.OnClickListener {
-    lateinit var logoutbutton:Button
+
     lateinit var profile_image:ImageView
     lateinit var acct_name:TextView
     lateinit var acct_email:TextView
+    private lateinit var sharedPreferences: SharedPreferences
+    private lateinit var userDao: UserDao
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         // Inflate the layout for this fragment
+        val application = requireNotNull(this.activity).application
+        sharedPreferences = application.getSharedPreferences("SHARED_PREFS", Context.MODE_PRIVATE)
+        userDao = AppDatabase.getInstance(application).userDao
         return inflater.inflate(R.layout.fragment_settings_fragment, container, false)
     }
 
@@ -55,6 +64,7 @@ class Settings_fragment : Fragment(), View.OnClickListener {
     }
 
     private fun userLogout(){
+        sharedPreferences.edit().putBoolean("loggedIn", false).apply()
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
             .build()
@@ -66,15 +76,17 @@ class Settings_fragment : Fragment(), View.OnClickListener {
     }
 
     private fun googleAccount(){
-        var account:GoogleSignInAccount? = GoogleSignIn.getLastSignedInAccount(activity)
-        var user: User? = activity!!.intent.getParcelableExtra("user")
+        val account:GoogleSignInAccount? = GoogleSignIn.getLastSignedInAccount(activity)
+
         if(account != null) {
-            acct_name.text = account?.displayName
-            acct_email.text = account?.email
-            Glide.with(this).load(account?.photoUrl).apply(RequestOptions.circleCropTransform())
+            acct_name.text = account.displayName
+            acct_email.text = account.email
+            Glide.with(this).load(account.photoUrl).apply(RequestOptions.circleCropTransform())
                 .into(profile_image)
         }
         else {
+            val libraryUserId = sharedPreferences.getInt("userid", 0)
+            val user: User? = userDao.findUserById(libraryUserId)
             acct_name.text = user?.fullname
             acct_email.text = user?.userName
             profile_image.setImageResource(R.drawable.ic_account2)

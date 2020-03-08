@@ -1,13 +1,14 @@
 package com.example.library.loginFlow
 
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
-import androidx.room.Room
 import com.example.library.utils.HashUtils
 import com.example.library.MainActivity
 import com.example.library.R
@@ -29,8 +30,8 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
     private lateinit var sign_in_button: SignInButton
     private lateinit var sign_up_button: Button
     private var RC_SIGN_IN = 0
-    private lateinit var db: AppDatabase
     private lateinit var userDao: UserDao
+    private lateinit var sharedPreferences: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,11 +39,10 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
         setSupportActionBar(findViewById(R.id.login_toolbar))
         initViews()
         initListeners()
-        db = Room.databaseBuilder(
-            applicationContext,
-            AppDatabase::class.java, "local_db"
-        ).allowMainThreadQueries().build()
-        userDao = db.userDao()
+        val application = requireNotNull(this).application
+        userDao = AppDatabase.getInstance(application).userDao
+        sharedPreferences = getSharedPreferences("SHARED_PREFS", Context.MODE_PRIVATE)
+        sharedPreferences.edit().putBoolean("loggedIn", false).apply()
     }
     override fun onClick(v:View?){
         when(v?.id){
@@ -51,7 +51,8 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
             R.id.sign_in_button -> googleSignIn()
         }
     }
-   public override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+
+    public override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         // Result returned from launching the Intent from GoogleSignInClient.getSignInIntent(...);
         if (requestCode == RC_SIGN_IN) {
@@ -89,27 +90,29 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
         sign_in_button.setOnClickListener(this)
     }
     private fun userLogin(){
-        var uname = username.text.toString()
-        var pwd = HashUtils.sha1(password.text.toString())
-        var foundUser = userDao.findUser(uname, pwd)
+        val uname = username.text.toString()
+        val pwd = HashUtils.sha1(password.text.toString())
+        val foundUser = userDao.findUser(uname, pwd)
         if(foundUser != null){
-            val intent = Intent(this, MainActivity::class.java).apply {
-                putExtra("user", foundUser)
-            }
+            //logged in user id
+            sharedPreferences.edit().putInt("userid", foundUser.uid).apply()
+            sharedPreferences.edit().putBoolean("loggedIn", true).apply()
+            val intent = Intent(this, MainActivity::class.java)
             startActivity(intent)
             finish()
         }
     }
 
     private fun startRegistration(){
-        var intent = Intent(this, Registration::class.java)
+        val intent = Intent(this, Registration::class.java)
         startActivity(intent)
     }
 
     //when the app has stopped and restarted, check if someone is logged in with google account
     override fun onStart() {
-        var account:GoogleSignInAccount? = GoogleSignIn.getLastSignedInAccount(this)
-        if (account != null){
+        val account:GoogleSignInAccount? = GoogleSignIn.getLastSignedInAccount(this)
+        //check whether logged in with google account or library++ account
+        if (account != null || sharedPreferences.getBoolean("loggedIn", false)){
             startActivity(Intent(this, MainActivity::class.java))
             finish()
         }

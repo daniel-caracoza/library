@@ -20,10 +20,4 @@
         android:textAlignment="center"
         android:gravity="center"/>
 
-    <Button
-        android:id="@+id/bookButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Find Book" />
-
 </FrameLayout>

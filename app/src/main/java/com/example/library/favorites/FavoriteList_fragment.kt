@@ -1,5 +1,7 @@
 package com.example.library.favorites
 
+import android.content.Context
+import android.content.SharedPreferences
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -7,7 +9,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
 import com.example.library.R
 import com.example.library.database.AppDatabase
@@ -19,7 +20,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 class FavoriteList_fragment : Fragment() {
 
     private var userId:Int = 0
-
+    private lateinit var sharedPreferences: SharedPreferences
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -28,7 +29,7 @@ class FavoriteList_fragment : Fragment() {
             inflater, R.layout.fragment_favorite_list_fragment, container, false)
 
         val application = requireNotNull(this.activity).application
-
+        sharedPreferences = application.getSharedPreferences("SHARED_PREFS", Context.MODE_PRIVATE)
         val dataSource = AppDatabase.getInstance(application).favoriteDao
 
         val viewModelFactory = FavoritesViewModelFactory(userId, dataSource, application)
@@ -58,14 +59,14 @@ class FavoriteList_fragment : Fragment() {
     private fun retrieveSignIn(){
 
         val account: GoogleSignInAccount? = GoogleSignIn.getLastSignedInAccount(activity)
-        val user: User? = activity!!.intent.getParcelableExtra("user")
+        val uid = sharedPreferences.getInt("userid", 0)
 
-        when(account == null){
-            true -> userId = user!!.uid
+        userId = when(account == null){
+            true -> uid
             false -> {
                 val gid = account.id!!
                 val truncate = gid.substring(0, gid.length - 12)
-                userId = truncate.toInt()
+                truncate.toInt()
             }
         }
     }

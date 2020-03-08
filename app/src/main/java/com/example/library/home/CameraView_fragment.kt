@@ -7,12 +7,9 @@ import android.util.DisplayMetrics
 import android.util.Log
 import android.util.Size
 import android.view.*
-import android.widget.Button
 import android.widget.TextView
 import androidx.camera.core.*
 import androidx.fragment.app.Fragment
-import androidx.navigation.findNavController
-import com.example.library.home.CameraView_fragmentDirections
 import com.example.library.R
 import com.google.firebase.ml.vision.FirebaseVision
 import com.google.firebase.ml.vision.common.FirebaseVisionImage
@@ -23,7 +20,7 @@ import java.nio.ByteBuffer
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
-class CameraView_fragment : Fragment(), View.OnClickListener {
+class CameraView_fragment : Fragment() {
 
     private lateinit var cameraView: TextureView
     private val executor = Executors.newSingleThreadExecutor()
@@ -45,28 +42,8 @@ class CameraView_fragment : Fragment(), View.OnClickListener {
         cameraView.post {
             setUpCameraX()
         }
-
         return view
     }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        view.findViewById<Button>(R.id.bookButton).setOnClickListener(this)
-    }
-
-    override fun onClick(v: View?) {
-        when(v?.id){
-            R.id.bookButton -> {
-                val action =
-                    CameraView_fragmentDirections.actionCameraViewToBookInformation(
-                        extractedText
-                    )
-                v!!.findNavController().navigate(action)
-
-            }
-        }
-    }
-
 
     private fun setUpCameraX() {
         CameraX.unbindAll()

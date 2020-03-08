@@ -13,10 +13,11 @@ interface UserDao {
     @Query("SELECT * FROM user")
     fun getAll(): List<User>
 
-    @Query("SELECT * FROM user WHERE username LIKE :userName " +
-            "AND password LIKE :password LIMIT 1")
-
+    @Query("SELECT * FROM user WHERE username LIKE :userName AND password LIKE :password LIMIT 1")
     fun findUser(userName: String, password: String): User
+
+    @Query("SELECT * FROM user WHERE uid LIKE :userid LIMIT 1")
+    fun findUserById(userid: Int): User
 
     @Query("SELECT * FROM user WHERE username LIKE :userName LIMIT 1")
     fun findusername(userName: String): User
