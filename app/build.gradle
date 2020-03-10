@@ -46,7 +46,7 @@ dependencies {
     def nav_version = "2.1.0"
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'com.google.ar.sceneform.ux:sceneform-ux:1.15.0'
-
+    implementation 'de.javagl:obj:0.2.1'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'com.google.firebase:firebase-analytics:17.2.0'
     implementation 'androidx.appcompat:appcompat:1.0.2'

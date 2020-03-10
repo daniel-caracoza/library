@@ -10,10 +10,10 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import com.example.library.utils.HashUtils
-import com.example.library.MainActivity
 import com.example.library.R
 import com.example.library.database.AppDatabase
 import com.example.library.database.UserDao
+import com.example.library.home.SharedCameraActivity
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -65,7 +65,7 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
     private fun handleSignInResult(completedTask: Task<GoogleSignInAccount>) {
         try {
             val account = completedTask.getResult(ApiException::class.java)
-            startActivity(Intent(this, MainActivity::class.java))
+            startActivity(Intent(this, SharedCameraActivity::class.java))
             finish()
             // Signed in successfully, show authenticated UI.
         } catch (e: ApiException) {
@@ -97,7 +97,7 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
             //logged in user id
             sharedPreferences.edit().putInt("userid", foundUser.uid).apply()
             sharedPreferences.edit().putBoolean("loggedIn", true).apply()
-            val intent = Intent(this, MainActivity::class.java)
+            val intent = Intent(this, SharedCameraActivity::class.java)
             startActivity(intent)
             finish()
         }
@@ -113,7 +113,7 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
         val account:GoogleSignInAccount? = GoogleSignIn.getLastSignedInAccount(this)
         //check whether logged in with google account or library++ account
         if (account != null || sharedPreferences.getBoolean("loggedIn", false)){
-            startActivity(Intent(this, MainActivity::class.java))
+            startActivity(Intent(this, SharedCameraActivity::class.java))
             finish()
         }
         super.onStart()
