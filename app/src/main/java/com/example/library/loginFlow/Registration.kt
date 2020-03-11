@@ -30,11 +30,9 @@ class Registration : AppCompatActivity(), View.OnClickListener{
         setContentView(R.layout.activity_registration)
         initViews()
         initListeners()
-        db = Room.databaseBuilder(
-            applicationContext,
-            AppDatabase::class.java, "local_db"
-        ).allowMainThreadQueries().build()
-        userDao = db.userDao()
+        val application = requireNotNull(this).application
+        userDao = AppDatabase.getInstance(application).userDao
+
     }
     //initialize all UI Elements
     private fun initViews(){

@@ -2,15 +2,13 @@ package com.example.library.favorites
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.Transformations
 import com.example.library.database.FavoriteDao
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.*
 
 class FavoritesViewModel(
 
-    val userId:Int,
-
+    userId:Int,
     val database: FavoriteDao,
     application: Application): AndroidViewModel(application) {
 
@@ -19,6 +17,22 @@ class FavoritesViewModel(
     private val uiScope = CoroutineScope(Dispatchers.Main + viewModelJob)
 
     val favorites = database.getFavorites(userId)
+
+    val clearButtonVisible = Transformations.map(favorites) {
+        it?.isNotEmpty()
+    }
+
+    fun onClear(){
+        uiScope.launch {
+            clear()
+        }
+    }
+
+    private suspend fun clear(){
+        withContext(Dispatchers.IO){
+            database.deleteShelf()
+        }
+    }
 
     @Override
     override fun onCleared() {

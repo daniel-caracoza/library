@@ -7,7 +7,6 @@ import androidx.appcompat.app.AppCompatActivity
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
-import androidx.room.Room
 import com.example.library.utils.HashUtils
 import com.example.library.MainActivity
 import com.example.library.R
@@ -29,7 +28,6 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
     private lateinit var sign_in_button: SignInButton
     private lateinit var sign_up_button: Button
     private var RC_SIGN_IN = 0
-    private lateinit var db: AppDatabase
     private lateinit var userDao: UserDao
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,11 +36,8 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
         setSupportActionBar(findViewById(R.id.login_toolbar))
         initViews()
         initListeners()
-        db = Room.databaseBuilder(
-            applicationContext,
-            AppDatabase::class.java, "local_db"
-        ).allowMainThreadQueries().build()
-        userDao = db.userDao()
+        val application = requireNotNull(this).application
+        userDao = AppDatabase.getInstance(application).userDao
     }
     override fun onClick(v:View?){
         when(v?.id){

@@ -172,7 +172,7 @@ class BookInformationViewModel(val userId:Int, val database: FavoriteDao, applic
      */
     private suspend fun goodReadsAuthorBooksRequest(authorId: String): GoodreadsResponse {
         return withContext(Dispatchers.IO){
-            val parameters = mapOf("key" to goodreadsApiKey, "id" to authorId)
+            val parameters = mapOf<String, String>("key" to goodreadsApiKey, "id" to authorId)
             GoodreadsApi.retrofitService.getAuthorsBooks(parameters)
         }
     }
@@ -181,14 +181,14 @@ class BookInformationViewModel(val userId:Int, val database: FavoriteDao, applic
      */
     private suspend fun goodReadsReviewsAndGenresRequest(id: Int): GoodreadsResponse {
         return withContext(Dispatchers.IO){
-            val parameters = mapOf("key" to goodreadsApiKey)
+            val parameters = mapOf<String, String>("key" to goodreadsApiKey)
             GoodreadsApi.retrofitService.getReviewsAndGenres(id, parameters)
         }
     }
 
     private suspend fun goodReadsReviewsAndGenresRequestByISBN(isbn: String): GoodreadsResponse {
         return withContext(Dispatchers.IO) {
-            val parameters = mapOf("key" to goodreadsApiKey)
+            val parameters = mapOf<String, String>("key" to goodreadsApiKey)
             GoodreadsApi.retrofitService.getReviewsAndGenresByISBN(isbn, parameters)
         }
     }
