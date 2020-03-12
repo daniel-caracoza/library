@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+
+    <item
+        android:id="@+id/search_options"
+
+        android:title="Search for NYT Best Seller"
+
+        />
+    <group android:checkableBehavior="single">
+        <menu>
+            <item
+                android:id="@+id/option_isbn"
+                android:title="search by ISBN"
+                />
+            <item
+                android:id="@+id/option_author_title"
+                android:title="search by author, title or both"
+                />
+            <group android:checkableBehavior="all">
+                <menu>
+                    <item
+                        android:id="@+id/option_author"
+                        android:title="serach by author"
+                        />
+                    <item
+                        android:id="@+id/option_title"
+                        android:title="search by title"
+                        />
+                </menu>
+            </group>
+        </menu>
+
+    </group>
+
+
+
+
+
+</menu>
