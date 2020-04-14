@@ -3,12 +3,12 @@ package com.example.library.home
 import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.example.library.database.FavoriteDao
+import com.example.library.database.AppDatabase
 import java.lang.IllegalArgumentException
 
 class BookViewModelFactory(
     private val userId:Int,
-    private val dataSource: FavoriteDao,
+    private val dataSource: AppDatabase,
     private val application: Application,
     private val extractedText: String): ViewModelProvider.Factory {
     @Suppress("Unchecked cast")

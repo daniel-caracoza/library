@@ -29,7 +29,7 @@ class FavoriteList_fragment : Fragment() {
 
         val application = requireNotNull(this.activity).application
 
-        val dataSource = AppDatabase.getInstance(application).favoriteDao
+        val dataSource = AppDatabase.getInstance(application)
 
         val viewModelFactory = FavoritesViewModelFactory(userId, dataSource, application)
 

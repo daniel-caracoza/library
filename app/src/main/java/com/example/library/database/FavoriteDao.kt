@@ -21,7 +21,7 @@ interface FavoriteDao {
     @Query("DELETE FROM favorite WHERE bookid LIKE :bookid AND userid LIKE :userid")
     fun deleteFavorite(userid:Int, bookid: String)
 
-    @Query("DELETE FROM favorite")
-    fun deleteShelf()
+    @Query("DELETE FROM favorite WHERE userid LIKE :userId")
+    suspend fun deleteShelf(userId: Int)
 
 }

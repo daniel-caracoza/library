@@ -40,7 +40,7 @@ class BookInformation : Fragment() {
         )
         val application = requireNotNull(this.activity).application
 
-        val dataSource = AppDatabase.getInstance(application).favoriteDao
+        val dataSource = AppDatabase.getInstance(application)
 
         val viewModelFactory = BookViewModelFactory(userId, dataSource, application, args.bookTitle)
 
