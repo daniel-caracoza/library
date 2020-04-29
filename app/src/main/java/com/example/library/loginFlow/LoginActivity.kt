@@ -5,21 +5,21 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.View
-import androidx.appcompat.app.AppCompatActivity
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
-import com.example.library.utils.HashUtils
+import androidx.appcompat.app.AppCompatActivity
 import com.example.library.R
 import com.example.library.database.AppDatabase
 import com.example.library.database.UserDao
-import com.example.library.home.SharedCameraActivity
+import com.example.library.home.ARSceneView
+import com.example.library.utils.HashUtils
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.SignInButton
-import com.google.android.gms.tasks.Task
 import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.tasks.Task
 
 
 class LoginActivity : AppCompatActivity(), View.OnClickListener {
@@ -65,7 +65,7 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
     private fun handleSignInResult(completedTask: Task<GoogleSignInAccount>) {
         try {
             val account = completedTask.getResult(ApiException::class.java)
-            startActivity(Intent(this, SharedCameraActivity::class.java))
+            startActivity(Intent(this, ARSceneView::class.java))
             finish()
             // Signed in successfully, show authenticated UI.
         } catch (e: ApiException) {
@@ -89,6 +89,7 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
         loginButton.setOnClickListener(this)
         sign_in_button.setOnClickListener(this)
     }
+
     private fun userLogin(){
         val uname = username.text.toString()
         val pwd = HashUtils.sha1(password.text.toString())
@@ -97,7 +98,7 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
             //logged in user id
             sharedPreferences.edit().putInt("userid", foundUser.uid).apply()
             sharedPreferences.edit().putBoolean("loggedIn", true).apply()
-            val intent = Intent(this, SharedCameraActivity::class.java)
+            val intent = Intent(this, ARSceneView::class.java)
             startActivity(intent)
             finish()
         }
@@ -113,7 +114,7 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
         val account:GoogleSignInAccount? = GoogleSignIn.getLastSignedInAccount(this)
         //check whether logged in with google account or library++ account
         if (account != null || sharedPreferences.getBoolean("loggedIn", false)){
-            startActivity(Intent(this, SharedCameraActivity::class.java))
+            startActivity(Intent(this, ARSceneView::class.java))
             finish()
         }
         super.onStart()
