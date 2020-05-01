@@ -11,20 +11,20 @@ import com.example.library.database.User
 interface UserDao {
 
     @Query("SELECT * FROM user")
-    fun getAll(): List<User>
+    suspend fun getAll(): List<User>
 
     @Query("SELECT * FROM user WHERE username LIKE :userName AND password LIKE :password LIMIT 1")
-    fun findUser(userName: String, password: String): User
+    suspend fun findUser(userName: String, password: String): User
 
     @Query("SELECT * FROM user WHERE uid LIKE :userid LIMIT 1")
-    fun findUserById(userid: Int): User
+    suspend fun findUserById(userid: Int): User
 
     @Query("SELECT * FROM user WHERE username LIKE :userName LIMIT 1")
-    fun findusername(userName: String): User
+    suspend fun findusername(userName: String): User
 
     @Insert
-    fun insertAll(vararg users: User)
+    suspend fun insertAll(vararg users: User)
 
     @Delete
-    fun delete(user: User)
+    suspend fun delete(user: User)
 }

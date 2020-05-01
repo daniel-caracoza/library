@@ -22,7 +22,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.tasks.OnCompleteListener
-
+import kotlinx.coroutines.*
 
 
 class Settings_fragment : Fragment(), View.OnClickListener {
@@ -32,13 +32,16 @@ class Settings_fragment : Fragment(), View.OnClickListener {
     lateinit var acct_email:TextView
     private lateinit var sharedPreferences: SharedPreferences
     private lateinit var userDao: UserDao
+    private val job = Job()
+    private val uiScope = CoroutineScope(Dispatchers.Main + job)
+    private lateinit var application: Context
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         // Inflate the layout for this fragment
-        val application = requireNotNull(this.activity).application
+        application = requireNotNull(this.activity).application
         sharedPreferences = application.getSharedPreferences("SHARED_PREFS", Context.MODE_PRIVATE)
         userDao = AppDatabase.getInstance(application).userDao
         return inflater.inflate(R.layout.fragment_settings_fragment, container, false)
@@ -50,17 +53,19 @@ class Settings_fragment : Fragment(), View.OnClickListener {
         acct_name = view.findViewById<TextView>(R.id.acct_name)
         acct_email = view.findViewById(R.id.email)
         view.findViewById<Button>(R.id.logout).setOnClickListener(this)
-        googleAccount()
+        uiScope.launch {
+            googleAccount()
+        }
     }
 
 
     override fun onClick(v: View?) {
-        when(v?.id){
-            R.id.logout -> {
-                userLogout()
-                activity!!.finish()
+            when (v?.id) {
+                R.id.logout -> {
+                    userLogout()
+                    requireActivity().finish()
+                }
             }
-        }
     }
 
     private fun userLogout(){
@@ -68,28 +73,31 @@ class Settings_fragment : Fragment(), View.OnClickListener {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
             .build()
-        val mGoogleSignInClient = GoogleSignIn.getClient(activity!!.applicationContext, gso)
+        val mGoogleSignInClient = GoogleSignIn.getClient(requireActivity().applicationContext, gso)
         mGoogleSignInClient.signOut().addOnCompleteListener(OnCompleteListener<Void> {
             startActivity(Intent(activity, LoginActivity::class.java))
         })
 
     }
 
-    private fun googleAccount(){
-        val account:GoogleSignInAccount? = GoogleSignIn.getLastSignedInAccount(activity)
+    private suspend fun googleAccount() {
+            val account: GoogleSignInAccount? = GoogleSignIn.getLastSignedInAccount(activity)
 
-        if(account != null) {
-            acct_name.text = account.displayName
-            acct_email.text = account.email
-            Glide.with(this).load(account.photoUrl).apply(RequestOptions.circleCropTransform())
-                .into(profile_image)
-        }
-        else {
-            val libraryUserId = sharedPreferences.getInt("userid", 0)
-            val user: User? = userDao.findUserById(libraryUserId)
-            acct_name.text = user?.fullname
-            acct_email.text = user?.userName
-            profile_image.setImageResource(R.drawable.ic_account2)
-        }
+            if (account != null) {
+                acct_name.text = account.displayName
+                acct_email.text = account.email
+                Glide.with(application).load(account.photoUrl).apply(RequestOptions.circleCropTransform())
+                    .into(profile_image)
+            } else {
+                val libraryUserId = sharedPreferences.getInt("userid", 0)
+
+                var user: User? = null
+                uiScope.launch {
+                    user = userDao.findUserById(libraryUserId)
+                }
+                acct_name.text = user?.fullname
+                acct_email.text = user?.userName
+                profile_image.setImageResource(R.drawable.ic_account2)
+            }
     }
 }

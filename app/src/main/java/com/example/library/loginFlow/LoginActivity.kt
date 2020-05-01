@@ -9,17 +9,20 @@ import androidx.appcompat.app.AppCompatActivity
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
+import com.example.library.MainActivity
 import com.example.library.utils.HashUtils
 import com.example.library.R
 import com.example.library.database.AppDatabase
+import com.example.library.database.User
 import com.example.library.database.UserDao
-import com.example.library.home.SharedCameraActivity
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.SignInButton
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.common.api.ApiException
+import kotlinx.coroutines.*
 
 
 class LoginActivity : AppCompatActivity(), View.OnClickListener {
@@ -29,9 +32,13 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
     private lateinit var loginButton: Button
     private lateinit var sign_in_button: SignInButton
     private lateinit var sign_up_button: Button
-    private var RC_SIGN_IN = 0
+    private var RC_SIGN_IN = 1
+    private lateinit var mGoogleSignInClient: GoogleSignInClient
+    private lateinit var mGoogleSignInOptions: GoogleSignInOptions
     private lateinit var userDao: UserDao
     private lateinit var sharedPreferences: SharedPreferences
+    private val job = Job()
+    private val uiScope = CoroutineScope(Dispatchers.Main + job)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,37 +47,50 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
         initViews()
         initListeners()
         val application = requireNotNull(this).application
+        configureGoogleSignIn()
         userDao = AppDatabase.getInstance(application).userDao
         sharedPreferences = getSharedPreferences("SHARED_PREFS", Context.MODE_PRIVATE)
         sharedPreferences.edit().putBoolean("loggedIn", false).apply()
     }
     override fun onClick(v:View?){
-        when(v?.id){
-            R.id.login -> { userLogin() }
-            R.id.signup -> { startRegistration() }
-            R.id.sign_in_button -> googleSignIn()
-        }
+            when (v?.id) {
+                R.id.login -> {
+                    userLogin()
+                }
+                R.id.signup -> {
+                    startRegistration()
+                }
+                R.id.sign_in_button -> googleSignIn()
+            }
+    }
+
+    private fun configureGoogleSignIn(){
+        mGoogleSignInOptions = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken("1:816570324968:android:40fce80fa9d53a72baf65d")
+            .requestEmail()
+            .build()
+        mGoogleSignInClient = GoogleSignIn.getClient(this, mGoogleSignInOptions)
+    }
+
+    private fun googleSignIn(){
+        val signInIntent: Intent = mGoogleSignInClient.signInIntent
+        startActivityForResult(signInIntent, RC_SIGN_IN)
     }
 
     public override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        // Result returned from launching the Intent from GoogleSignInClient.getSignInIntent(...);
         if (requestCode == RC_SIGN_IN) {
-            // The Task returned from this call is always completed, no need to attach
-            // a listener.
             val task = GoogleSignIn.getSignedInAccountFromIntent(data)
             handleSignInResult(task)
         }
     }
     private fun handleSignInResult(completedTask: Task<GoogleSignInAccount>) {
         try {
+            //use this account to authenticate firebase!
             val account = completedTask.getResult(ApiException::class.java)
-            startActivity(Intent(this, SharedCameraActivity::class.java))
+            startActivity(Intent(this, MainActivity::class.java))
             finish()
-            // Signed in successfully, show authenticated UI.
         } catch (e: ApiException) {
-            // The ApiException status code indicates the detailed failure reason.
-            // Please refer to the GoogleSignInStatusCodes class reference for more information.
             Toast.makeText(this, "Failed Sign In", Toast.LENGTH_LONG).show()
         }
 
@@ -92,12 +112,13 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
     private fun userLogin(){
         val uname = username.text.toString()
         val pwd = HashUtils.sha1(password.text.toString())
-        val foundUser = userDao.findUser(uname, pwd)
+        var foundUser:User? = null
+        uiScope.launch { withContext(Dispatchers.IO){foundUser = userDao.findUser(uname, pwd) }}
         if(foundUser != null){
             //logged in user id
-            sharedPreferences.edit().putInt("userid", foundUser.uid).apply()
+            sharedPreferences.edit().putInt("userid", foundUser!!.uid).apply()
             sharedPreferences.edit().putBoolean("loggedIn", true).apply()
-            val intent = Intent(this, SharedCameraActivity::class.java)
+            val intent = Intent(this, MainActivity::class.java)
             startActivity(intent)
             finish()
         }
@@ -113,24 +134,10 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
         val account:GoogleSignInAccount? = GoogleSignIn.getLastSignedInAccount(this)
         //check whether logged in with google account or library++ account
         if (account != null || sharedPreferences.getBoolean("loggedIn", false)){
-            startActivity(Intent(this, SharedCameraActivity::class.java))
+            startActivity(Intent(this, MainActivity::class.java))
             finish()
         }
         super.onStart()
-    }
-    /*
-     integrate google sign in
-     Configure sign-in to request the user's ID, email address, and basic
-     profile. ID and basic profile are included in DEFAULT_SIGN_IN.
-     Build a GoogleSignInClient with the options specified by gso.
-     */
-    private fun googleSignIn(){
-        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestEmail()
-            .build()
-        val mGoogleSignInClient = GoogleSignIn.getClient(this, gso)
-        val signInIntent = mGoogleSignInClient.signInIntent
-        startActivityForResult(signInIntent, RC_SIGN_IN)
     }
 
 }

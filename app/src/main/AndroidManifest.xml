@@ -5,8 +5,6 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera.ar" android:required="true"/>
-    <uses-feature android:glEsVersion="0x00020000" android:required="true" />
-    <uses-feature android:name="android.hardware.camera2.full" />
 
     <application
         android:allowBackup="true"
@@ -15,8 +13,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
-        <activity android:name=".settings.SettingsActivity"/>
-        <activity android:name=".favorites.FavoritesActivity" />
+        <meta-data android:name="com.google.ar.core" android:value="required"/>
         <activity android:name=".loginFlow.LoginActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -26,9 +23,8 @@
         </activity>
         <activity android:name=".MainActivity" />
         <activity android:name=".loginFlow.Registration" />
-        <activity android:name=".home.SharedCameraActivity" />
-        <meta-data android:name="com.google.ar.core" android:value="required" />
-
+        <activity android:name=".settings.SettingsActivity"/>
+        <activity android:name=".favorites.FavoritesActivity" />
     </application>
 
 </manifest>
