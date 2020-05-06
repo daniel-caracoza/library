@@ -9,18 +9,17 @@
     android:clipToPadding="false" >
 
     <TextView
-        android:id="@+id/orbitHeader"
+        android:id="@+id/topText"
+        android:text="Hello"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Hello!"
         android:textAlignment="center" />
 
 
     <TextView
-        android:id="@+id/rotationHeader"
+        android:id="@+id/bottomText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Library++"
         android:textAlignment="center"
         android:paddingTop="2dp" />
 

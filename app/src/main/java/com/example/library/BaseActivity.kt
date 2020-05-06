@@ -5,7 +5,7 @@ import android.os.Bundle
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import com.example.library.favorites.FavoritesActivity
-import com.example.library.home.ARSceneView
+import com.example.library.home.ARView
 import com.example.library.settings.SettingsActivity
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
@@ -34,7 +34,7 @@ abstract class BaseActivity : AppCompatActivity(), BottomNavigationView.OnNaviga
         navigationView.postDelayed({
             when(item.itemId) {
                 R.id.account -> startActivity(Intent(this, SettingsActivity::class.java))
-                R.id.cameraView -> startActivity(Intent(this, ARSceneView::class.java))
+                R.id.cameraView -> startActivity(Intent(this, ARView::class.java))
                 R.id.favoriteList -> startActivity(Intent(this, FavoritesActivity::class.java))
             }
             finish()
