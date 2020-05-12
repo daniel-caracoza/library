@@ -15,6 +15,7 @@ class ApplicationRepository(private val database: AppDatabase) {
 
     private val goodreadsApiKey = BuildConfig.goodreadsKey
 
+    private val NYTimesApiKey  = BuildConfig.NYTimesKey
 
     /*
     @return a GoodsreadsResponse which contains a list of works(books) author name & id.
@@ -61,6 +62,31 @@ class ApplicationRepository(private val database: AppDatabase) {
             GoogleBooksApiService.GoogleBooksApi.retrofitService.performSearch(parameters)
         }
     }
+
+    suspend fun NYTimesBestSellerSearchByISBN(isbn: String) : BooksResponse{
+        return withContext(Dispatchers.IO){
+
+            BooksService.NYTimesApi.service.getNYTimesBestSellerDataByIsbn(NYTimesApiKey, isbn)
+        }
+    }
+
+    suspend fun NYTimesBestSellerSearchByAuthor(author: String) : BooksResponse{
+        return withContext(Dispatchers.IO){
+
+            BooksService.NYTimesApi.service.getNYTimesBestSellerDataByAuthor(NYTimesApiKey, author)
+        }
+    }
+
+    suspend fun NYTimesBestSellerSearchByTitle(title: String) : BooksResponse{
+        return withContext(Dispatchers.IO){
+
+            BooksService.NYTimesApi.service.getNYTimesBestSellerDataByTitle(NYTimesApiKey, title)
+        }
+    }
+
+
+
+
     /*
      *  Get a specific volume from google books api using volumeid retrieved from initial search request
      */

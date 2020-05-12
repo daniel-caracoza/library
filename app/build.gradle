@@ -23,6 +23,8 @@ android {
         buildConfigField("String", "goodreadsKey", goodreadsKey)
         buildConfigField("String", "goodreadsSecret", goodreadsSecret)
         buildConfigField("String", "goodreadsCallback", "\"oauth://goodreads\"")
+
+        buildConfigField("String", "NYTimesKey", NYTimesKey)
     }
     buildTypes {
         release {
