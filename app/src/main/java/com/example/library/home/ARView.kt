@@ -1,15 +1,25 @@
 package com.example.library.home
 
+import android.app.Activity
+import android.content.Context
 import android.content.pm.PackageManager
+import android.hardware.camera2.CameraAccessException
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.util.SparseIntArray
 import android.view.GestureDetector
 import android.view.MotionEvent
+import android.view.Surface
 import android.view.View
-import android.view.WindowManager
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ImageProxy
 import androidx.core.content.ContextCompat
 import com.example.library.R
 import com.example.library.R.layout.boxlayout
@@ -19,10 +29,13 @@ import com.google.ar.core.exceptions.UnavailableException
 import com.google.ar.sceneform.*
 import com.google.ar.sceneform.math.Vector3
 import com.google.ar.sceneform.rendering.ViewRenderable
+import com.google.firebase.ml.vision.FirebaseVision
+import com.google.firebase.ml.vision.common.FirebaseVisionImage
+import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata
+import com.google.firebase.ml.vision.text.FirebaseVisionTextRecognizer
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ExecutionException
 
 class ARView : AppCompatActivity() {
 
@@ -33,6 +46,8 @@ class ARView : AppCompatActivity() {
     private var boxPlaced = false
     private var loadingFinished = false
     private var installRequested = false
+    private val imageAnalyzer = ImageAnalyzer()
+    private var detector: FirebaseVisionTextRecognizer = FirebaseVision.getInstance().onDeviceTextRecognizer
     private lateinit var gestureDetector: GestureDetector
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,9 +69,10 @@ class ARView : AppCompatActivity() {
             }
         }
         sceneView.scene.addOnUpdateListener(this::onUpdateFrame)
+        sceneView.planeRenderer.isVisible = false
         gestureDetector = GestureDetector(this, object: GestureDetector.SimpleOnGestureListener(){
             override fun onSingleTapUp(e: MotionEvent): Boolean {
-                var frame = sceneView.arFrame
+                val frame = sceneView.arFrame
                 if(frame != null){
                     if(!boxPlaced && tryPlaceBox(e, frame)){
                         boxPlaced = true
@@ -84,7 +100,108 @@ class ARView : AppCompatActivity() {
     }
 
     private fun onIncreaseTime(frameTime: FrameTime){
-        textBox.text = getCurrentTime()
+        //textBox.text = getCurrentTime()
+        val image = sceneView.arFrame?.acquireCameraImage()
+        if(image != null){
+            val camId = getCameraId(this, CameraCharacteristics.LENS_FACING_BACK)
+            val rotation =getRotationCompensation(camId, this@ARView as Activity, this)
+            val firebaseVisionImage = FirebaseVisionImage.fromMediaImage(image, rotation)
+            val result = detector.processImage(firebaseVisionImage)
+                    .addOnSuccessListener { firebaseVisionText ->
+                        val resultText = firebaseVisionText.text
+                        for (block in firebaseVisionText.textBlocks) {
+                            val blockText = block.text
+                            val blockConfidence = block.confidence
+                            val blockLanguages = block.recognizedLanguages
+                            val blockCornerPoints = block.cornerPoints
+                            val blockFrame = block.boundingBox
+                            for (line in block.lines) {
+                                val lineText = line.text
+                                textBox.text = lineText
+                                val lineConfidence = line.confidence
+                                val lineLanguages = line.recognizedLanguages
+                                val lineCornerPoints = line.cornerPoints
+                                val lineFrame = line.boundingBox
+                                for (element in line.elements) {
+                                    val elementText = element.text
+                                    val elementConfidence = element.confidence
+                                    val elementLanguages = element.recognizedLanguages
+                                    val elementCornerPoints = element.cornerPoints
+                                    val elementFrame = element.boundingBox
+                                }
+                            }
+                        }
+                    }
+                    .addOnFailureListener { e ->
+                        // Task failed with an exception
+                        // ...
+                    }
+        }
+    }
+
+    private val ORIENTATIONS = SparseIntArray()
+
+    init {
+        ORIENTATIONS.append(Surface.ROTATION_0, 90)
+        ORIENTATIONS.append(Surface.ROTATION_90, 0)
+        ORIENTATIONS.append(Surface.ROTATION_180, 270)
+        ORIENTATIONS.append(Surface.ROTATION_270, 180)
+    }
+    /**
+     * Get the angle by which an image must be rotated given the device's current
+     * orientation.
+     */
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    @Throws(CameraAccessException::class)
+    private fun getRotationCompensation(cameraId: String, activity: Activity, context: Context): Int {
+        // Get the device's current rotation relative to its "native" orientation.
+        // Then, from the ORIENTATIONS table, look up the angle the image must be
+        // rotated to compensate for the device's rotation.
+        val deviceRotation = activity.windowManager.defaultDisplay.rotation
+        var rotationCompensation = ORIENTATIONS.get(deviceRotation)
+
+        // On most devices, the sensor orientation is 90 degrees, but for some
+        // devices it is 270 degrees. For devices with a sensor orientation of
+        // 270, rotate the image an additional 180 ((270 + 270) % 360) degrees.
+        val cameraManager = context.getSystemService(CAMERA_SERVICE) as CameraManager
+        val sensorOrientation = cameraManager
+                .getCameraCharacteristics(cameraId)
+                .get(CameraCharacteristics.SENSOR_ORIENTATION)!!
+        rotationCompensation = (rotationCompensation + sensorOrientation + 270) % 360
+
+        // Return the corresponding FirebaseVisionImageMetadata rotation value.
+        val result: Int
+        when (rotationCompensation) {
+            0 -> result = FirebaseVisionImageMetadata.ROTATION_0
+            90 -> result = FirebaseVisionImageMetadata.ROTATION_90
+            180 -> result = FirebaseVisionImageMetadata.ROTATION_180
+            270 -> result = FirebaseVisionImageMetadata.ROTATION_270
+            else -> {
+                result = FirebaseVisionImageMetadata.ROTATION_0
+                Log.e("cam", "Bad rotation value: $rotationCompensation")
+            }
+        }
+        return result
+    }
+
+    private class ImageAnalyzer : ImageAnalysis.Analyzer {
+        private fun degreesToFirebaseRotation(degrees: Int): Int = when(degrees) {
+            0 -> FirebaseVisionImageMetadata.ROTATION_0
+            90 -> FirebaseVisionImageMetadata.ROTATION_90
+            180 -> FirebaseVisionImageMetadata.ROTATION_180
+            270 -> FirebaseVisionImageMetadata.ROTATION_270
+            else -> throw Exception("Rotation must be 0, 90, 180, or 270.")
+        }
+
+        override fun analyze(imageProxy: ImageProxy?, degrees: Int) {
+            val mediaImage = imageProxy?.image
+            val imageRotation = degreesToFirebaseRotation(degrees)
+            if (mediaImage != null) {
+                val image = FirebaseVisionImage.fromMediaImage(mediaImage, imageRotation)
+                // Pass image to an ML Kit Vision API
+                // ...
+            }
+        }
     }
 
    private fun onUpdateFrame(frameTime : FrameTime){
@@ -145,6 +262,16 @@ class ARView : AppCompatActivity() {
             } catch(e : UnavailableException){
                 Utils.handleSessionException(this, e)
             }
+        }
+    }
+
+    fun getCameraId(context: Context, facing: Int): String {
+        val manager = context.getSystemService(CAMERA_SERVICE) as CameraManager
+
+        return manager.cameraIdList.first {
+            manager
+                    .getCameraCharacteristics(it)
+                    .get(CameraCharacteristics.LENS_FACING) == facing
         }
     }
 
@@ -214,8 +341,8 @@ class ARView : AppCompatActivity() {
     }
 
     private fun createBox(): Node{
-        var base = Node()
-        var box = Node()
+        val base = Node()
+        val box = Node()
         box.setParent(base)
         box.renderable = boxRenderable
         box.localPosition = Vector3(0.0f, 0.25f, 0.0f)
