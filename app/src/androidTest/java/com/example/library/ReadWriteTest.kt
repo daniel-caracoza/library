@@ -6,6 +6,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.library.database.AppDatabase
 import com.example.library.database.User
 import com.example.library.database.UserDao
+import kotlinx.coroutines.*
 import org.hamcrest.CoreMatchers.equalTo
 import org.junit.After
 
@@ -24,12 +25,15 @@ import org.junit.Before
 class ReadWriteTest {
     private lateinit var db: AppDatabase
     private lateinit var userDao: UserDao
+    private val job = Job()
+    private val uiScope = CoroutineScope(Dispatchers.Main + job)
 
     @Before
     fun createDB(){
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+        val application = requireNotNull(this)
         db = Room.inMemoryDatabaseBuilder(appContext, AppDatabase::class.java).build()
-        userDao = db.userDao()
+        userDao = db.userDao
     }
     @Test
     @Throws(Exception::class)
@@ -41,9 +45,13 @@ class ReadWriteTest {
                 "test@domain.com",
                 "test"
             )
-        userDao.insertAll(user)
-        val users = userDao.getAll()
-        assertThat(user, equalTo(users[0]))
+        uiScope.launch {
+            withContext(Dispatchers.IO) {
+                userDao.insertAll(user)
+                val users = userDao.getAll()
+                assertThat(user, equalTo(users[0]))
+            }
+        }
     }
     @Test
     @Throws(Exception::class)
@@ -55,9 +63,13 @@ class ReadWriteTest {
                 "test@domain.com",
                 "test"
             )
-        userDao.insertAll(user)
-        val foundUser = userDao.findusername(user.userName!!)
-        assertThat(foundUser, equalTo(user))
+        uiScope.launch {
+            withContext(Dispatchers.IO) {
+                userDao.insertAll(user)
+                val foundUser = userDao.findusername(user.userName!!)
+                assertThat(foundUser, equalTo(user))
+            }
+        }
     }
     @After
     fun closeDB(){

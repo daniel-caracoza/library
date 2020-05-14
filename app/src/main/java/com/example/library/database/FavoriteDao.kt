@@ -10,16 +10,16 @@ import androidx.room.Query
 interface FavoriteDao {
 
     @Query("SELECT * FROM favorite WHERE userid LIKE :userid")
-    fun getFavorites(userid:Int): LiveData<List<Favorite>>
+    fun getFavorites(userid:Long): LiveData<List<Favorite>>
 
     @Query("SELECT * FROM favorite WHERE author LIKE :author AND userid LIKE :userid")
-    fun filterAuthor(userid:Int, author:String):LiveData<List<Favorite>>
+    fun filterAuthor(userid:Long, author:String):LiveData<List<Favorite>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertAll(vararg favorites: Favorite)
 
     @Query("DELETE FROM favorite WHERE bookid LIKE :bookid AND userid LIKE :userid")
-    fun deleteFavorite(userid:Int, bookid: String)
+    fun deleteFavorite(userid:Long, bookid: String)
 
     @Query("DELETE FROM favorite")
     fun deleteShelf()

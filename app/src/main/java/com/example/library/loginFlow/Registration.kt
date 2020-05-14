@@ -96,7 +96,7 @@ class Registration : AppCompatActivity(), View.OnClickListener {
             true -> {
                 var boolean: Boolean = true
                 var foundName: String? = null
-                uiScope.launch { withContext(Dispatchers.IO){foundName = userDao.findusername(uname).userName} }
+                uiScope.launch { withContext(Dispatchers.IO){foundName = userDao.findusername(uname)?.userName} }
                 if(uname == foundName){
                     username.error == "Username already exists!"
                     boolean = false
@@ -107,13 +107,18 @@ class Registration : AppCompatActivity(), View.OnClickListener {
 
 
     private fun validatePasswordView():Boolean {
-        var test = password.text.isNotEmpty()
-        when (test) {
-            true ->  return true
+        val test = password.text.isNotEmpty()
+        return when (test) {
+            true -> true
             false -> {
                 password.error = "Password can't be empty"
-                return true
+                true
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        job.cancel()
     }
 }

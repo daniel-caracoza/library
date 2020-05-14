@@ -7,7 +7,7 @@ import com.example.library.database.FavoriteDao
 import java.lang.IllegalArgumentException
 
 class FavoritesViewModelFactory(
-    private val userId: Int,
+    private val userId: Long,
     private val dataSource: FavoriteDao,
     private val application: Application):ViewModelProvider.Factory {
 

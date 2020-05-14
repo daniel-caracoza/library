@@ -1,53 +1,75 @@
-package com.example.library
+package com.example.library.home
 
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Bundle
-import android.view.Menu
-import android.view.MenuItem
-import android.view.View
+import android.view.*
+import android.widget.FrameLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.example.library.R
 import com.example.library.favorites.FavoritesActivity
 import com.example.library.settings.SettingsActivity
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.ar.core.*
 import com.google.ar.core.ArCoreApk.InstallStatus
 import com.google.ar.core.exceptions.*
-import com.google.ar.sceneform.AnchorNode
-import com.google.ar.sceneform.ArSceneView
-import com.google.ar.sceneform.FrameTime
-import com.google.ar.sceneform.Node
-import com.google.ar.sceneform.rendering.ModelRenderable
+import com.google.ar.sceneform.*
 import com.google.ar.sceneform.rendering.ViewRenderable
-import com.google.ar.sceneform.ux.ArFragment
-import com.google.ar.sceneform.ux.TransformableNode
+import com.google.ar.sceneform.ux.PlaneDiscoveryController
 import kotlinx.android.synthetic.main.activity_main.*
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-class MainActivity: AppCompatActivity(), BottomNavigationView.OnNavigationItemSelectedListener {
+class MainActivity() : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelectedListener,
+Scene.OnPeekTouchListener, Scene.OnUpdateListener, Node.OnTapListener {
 
     private lateinit var arSceneView: ArSceneView
     private lateinit var updateTextView: TextView
-    private var isStarted: Boolean = false
     private var installRequested = false
+    private val cameraRequestCode: Int = 1
+    private var renderableExists = false
     private lateinit var navigationView: BottomNavigationView
+    private lateinit var frameLayout: FrameLayout
+    private lateinit var gestureDetector: GestureDetector
+    private lateinit var planeDiscoveryController: PlaneDiscoveryController
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
-        arSceneView = findViewById(R.id.sceneform_ar_scene_view)
-        //to check for updates to the textView
+        gestureDetector = GestureDetector(this, object: GestureDetector.SimpleOnGestureListener(){
+            override fun onSingleTapUp(e: MotionEvent?): Boolean {
+                onSingleTap(e)
+                return true
+            }
+
+            override fun onDown(e: MotionEvent?): Boolean {
+                return true
+            }
+        })
+    }
+
+    override fun setContentView(layoutResID: Int) {
+        val constraintLayout:ConstraintLayout = layoutInflater.inflate(R.layout.activity_main, null) as ConstraintLayout
+        frameLayout = constraintLayout.findViewById(R.id.ar_frame_layout)
+        arSceneView = frameLayout.findViewById(R.id.sceneform_ar_scene_view)
+        arSceneView.scene.addOnUpdateListener(this)
+        arSceneView.scene.addOnPeekTouchListener(this)
+
+        navigationView = constraintLayout.findViewById(R.id.bottom_navigation)
         updateTextView = layoutInflater.inflate(R.layout.info_card, null) as TextView
-        //listener to make updates, argument is the function called before frame is repainted
-        arSceneView.scene.addOnUpdateListener(this::onUpdateFrame)
-        navigationView = findViewById(R.id.bottom_navigation)
         navigationView.setOnNavigationItemSelectedListener(this)
+
+        val instructionsView: View = layoutInflater.inflate(R.layout.sceneform_plane_discovery_layout, frameLayout, false)
+        planeDiscoveryController = PlaneDiscoveryController(instructionsView)
+        frameLayout.addView(instructionsView)
+        super.setContentView(constraintLayout)
     }
 
     //arbitrary function to show realtime update to ViewRenderable
@@ -56,28 +78,45 @@ class MainActivity: AppCompatActivity(), BottomNavigationView.OnNavigationItemSe
         val format = DateTimeFormatter.ofPattern("HH:mm:ss")
         return current.format(format)
     }
+
     //called everytime the frame is about to update
-    private fun onUpdateFrame(frameTime: FrameTime){
+    override fun onUpdate(frameTime: FrameTime){
+        val frame = arSceneView.arFrame ?: return
+        val planes = frame.getUpdatedTrackables(Plane::class.java)
+        for(plane in planes){
+            if(plane.trackingState == TrackingState.TRACKING){
+                planeDiscoveryController.hide()
+            }
+        }
         updateTextView.text = getCurrentTime()
     }
 
-    private fun addObject(parse: Uri){
-        //val frame = arFragment.arSceneView.arFrame
-        val frame = arSceneView.arFrame
-        val point = getScreenCenter()
-        if(frame != null){
-            val hits = frame.hitTest(point.x.toFloat(), point.y.toFloat())
-            for(hit in hits){
-                val trackable = hit.trackable
-                if(trackable is Plane && trackable.isPoseInPolygon(hit.hitPose)){
-                    //placeObject(hit.createAnchor(), parse)
-                    placeInfoCard(hit.createAnchor())
-                }
-            }
+    override fun onPeekTouch(hitTestResult: HitTestResult?, motionEvent: MotionEvent?) {
+        if(hitTestResult!!.node == null){
+            gestureDetector.onTouchEvent(motionEvent)
         }
     }
 
-    private fun placeInfoCard(createAnchor: Anchor){
+    //invoked from a tap on the plane
+    private fun onSingleTap(tap:MotionEvent?){
+        val frame = arSceneView.arFrame
+        if(frame != null && !renderableExists){
+            if(tap != null && frame.camera.trackingState == TrackingState.TRACKING){
+                val hits = frame.hitTest(tap)
+                for(hit:HitResult in hits){
+                    val trackable = hit.trackable
+                    if(trackable is Plane && trackable.isPoseInPolygon(hit.hitPose)){
+                        initializeInfoCard(hit.createAnchor())
+                        arSceneView.planeRenderer.isVisible = false
+                        break
+                    }
+                }
+            }
+            renderableExists = true
+        }
+    }
+
+    private fun initializeInfoCard(createAnchor: Anchor){
         ViewRenderable.builder()
             .setView(this, R.layout.info_card)
             .build()
@@ -117,29 +156,49 @@ class MainActivity: AppCompatActivity(), BottomNavigationView.OnNavigationItemSe
         if(arSceneView.session == null){
             initializeSession()
         }
-        start()
+        try {
+            arSceneView.resume()
+        } catch (ex:CameraNotAvailableException){println(ex.message)}
     }
 
     private fun initializeSession() {
-        if(ContextCompat.checkSelfPermission(this, "android.permission.CAMERA")
-        == PackageManager.PERMISSION_GRANTED){
-            var sessionException: UnavailableException? = null
-            try {
-                if(requestInstall())
-                    return
-                val session: Session = Session(this)
-                val config:Config = session.config
-                config.updateMode = Config.UpdateMode.LATEST_CAMERA_IMAGE
-                session.configure(config)
-                arSceneView.setupSession(session)
+        if(ContextCompat.checkSelfPermission(this, "android.permission.CAMERA") != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.CAMERA), cameraRequestCode)
+        }
+        try {
+            if(requestInstall())
                 return
-            } catch(e: UnavailableException) {
-                sessionException = e
-                println(sessionException)
-            }
+            val session = Session(this)
+            val config:Config = session.config
+            config.updateMode = Config.UpdateMode.LATEST_CAMERA_IMAGE
+            session.configure(config)
+            arSceneView.setupSession(session)
+            return
+        } catch(e: UnavailableException) {
+            println(e.message)
         }
     }
 
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        when(requestCode){
+            cameraRequestCode -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                } else {
+                    Toast.makeText(
+                        this,
+                        "Camera permission is needed to run this application!",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    finish()
+                }
+            }
+        }
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    }
     @Throws(UnavailableException::class)
     private fun requestInstall(): Boolean {
         when (ArCoreApk.getInstance().requestInstall(this, !installRequested)) {
@@ -151,18 +210,6 @@ class MainActivity: AppCompatActivity(), BottomNavigationView.OnNavigationItemSe
             }
         }
         return false
-    }
-
-    private fun start() {
-        if (isStarted) {
-            return
-        }
-        isStarted = true
-        try {
-            arSceneView.resume()
-        } catch (ex: CameraNotAvailableException) {
-            println(ex.message)
-        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -185,11 +232,20 @@ class MainActivity: AppCompatActivity(), BottomNavigationView.OnNavigationItemSe
     override fun onStart() {
         super.onStart()
         updateNavigationBarState()
+        planeDiscoveryController.show()
     }
 
     override fun onPause() {
         super.onPause()
+        arSceneView.pause()
         overridePendingTransition(0,0)
+        planeDiscoveryController.hide()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        arSceneView.destroy()
+        planeDiscoveryController.hide()
     }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
@@ -200,7 +256,7 @@ class MainActivity: AppCompatActivity(), BottomNavigationView.OnNavigationItemSe
                 R.id.favoriteList -> startActivity(Intent(this, FavoritesActivity::class.java))
             }
             finish()
-        }, 300)
+        }, 100)
         return true
     }
 
@@ -212,5 +268,9 @@ class MainActivity: AppCompatActivity(), BottomNavigationView.OnNavigationItemSe
     private fun selectBottomNavigationBarItem(itemId: Int){
         val menuItem = navigationView.menu.findItem(itemId)
         menuItem.isChecked = true
+    }
+
+    override fun onTap(p0: HitTestResult?, p1: MotionEvent?) {
+        TODO("Not yet implemented")
     }
 }

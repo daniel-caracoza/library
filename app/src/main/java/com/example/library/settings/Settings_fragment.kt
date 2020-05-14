@@ -35,7 +35,7 @@ class Settings_fragment : Fragment(), View.OnClickListener {
     private val job = Job()
     private val uiScope = CoroutineScope(Dispatchers.Main + job)
     private lateinit var application: Context
-
+    private var user: User? = null
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -53,9 +53,7 @@ class Settings_fragment : Fragment(), View.OnClickListener {
         acct_name = view.findViewById<TextView>(R.id.acct_name)
         acct_email = view.findViewById(R.id.email)
         view.findViewById<Button>(R.id.logout).setOnClickListener(this)
-        uiScope.launch {
-            googleAccount()
-        }
+        googleAccount()
     }
 
 
@@ -80,7 +78,7 @@ class Settings_fragment : Fragment(), View.OnClickListener {
 
     }
 
-    private suspend fun googleAccount() {
+    private fun googleAccount() {
             val account: GoogleSignInAccount? = GoogleSignIn.getLastSignedInAccount(activity)
 
             if (account != null) {
@@ -89,15 +87,17 @@ class Settings_fragment : Fragment(), View.OnClickListener {
                 Glide.with(application).load(account.photoUrl).apply(RequestOptions.circleCropTransform())
                     .into(profile_image)
             } else {
-                val libraryUserId = sharedPreferences.getInt("userid", 0)
-
-                var user: User? = null
-                uiScope.launch {
-                    user = userDao.findUserById(libraryUserId)
-                }
+                val libraryUserId = sharedPreferences.getLong("userid", 0)
+                user = runBlocking {displayUser(libraryUserId)}
                 acct_name.text = user?.fullname
                 acct_email.text = user?.userName
                 profile_image.setImageResource(R.drawable.ic_account2)
             }
+    }
+
+    private suspend fun displayUser(userid: Long): User? {
+        return withContext(Dispatchers.IO) {
+            userDao.findUserById(userid)
+        }
     }
 }

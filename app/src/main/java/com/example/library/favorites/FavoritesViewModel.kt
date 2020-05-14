@@ -8,7 +8,7 @@ import kotlinx.coroutines.*
 
 class FavoritesViewModel(
 
-    userId:Int,
+    userId:Long,
     val database: FavoriteDao,
     application: Application): AndroidViewModel(application) {
 

@@ -15,7 +15,6 @@ class ApplicationRepository(private val database: AppDatabase) {
 
     private val goodreadsApiKey = BuildConfig.goodreadsKey
 
-
     /*
     @return a GoodsreadsResponse which contains a list of works(books) author name & id.
     @param the extracted text from the camera view.
@@ -26,6 +25,7 @@ class ApplicationRepository(private val database: AppDatabase) {
             GoodreadsApiService.GoodreadsApi.retrofitService.getSearchProperties(parameters)
         }
     }
+    
     /*
     @return a GoodsreadsResponse which contains a list of books by author
     @param the author id

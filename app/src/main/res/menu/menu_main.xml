@@ -9,7 +9,7 @@
             android:checked="true"
             android:title="@string/show_prices"
             android:checkable="true"
-             />
+            />
         <item
             android:id="@+id/toggle_reviews"
             android:checked="true"

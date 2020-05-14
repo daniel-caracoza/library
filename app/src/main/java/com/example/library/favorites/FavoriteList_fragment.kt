@@ -19,7 +19,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 
 class FavoriteList_fragment : Fragment() {
 
-    private var userId:Int = 0
+    private var userId:Long = 0
     private lateinit var sharedPreferences: SharedPreferences
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -59,14 +59,14 @@ class FavoriteList_fragment : Fragment() {
     private fun retrieveSignIn(){
 
         val account: GoogleSignInAccount? = GoogleSignIn.getLastSignedInAccount(activity)
-        val uid = sharedPreferences.getInt("userid", 0)
+        val uid = sharedPreferences.getLong("userid", 0)
 
         userId = when(account == null){
             true -> uid
             false -> {
                 val gid = account.id!!
                 val truncate = gid.substring(0, gid.length - 12)
-                truncate.toInt()
+                truncate.toLong()
             }
         }
     }

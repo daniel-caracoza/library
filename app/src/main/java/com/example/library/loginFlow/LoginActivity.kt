@@ -9,7 +9,8 @@ import androidx.appcompat.app.AppCompatActivity
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
-import com.example.library.MainActivity
+import androidx.room.EmptyResultSetException
+import com.example.library.home.MainActivity
 import com.example.library.utils.HashUtils
 import com.example.library.R
 import com.example.library.database.AppDatabase
@@ -22,6 +23,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.SignInButton
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.common.api.ApiException
+import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.*
 
 
@@ -39,11 +41,12 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
     private lateinit var sharedPreferences: SharedPreferences
     private val job = Job()
     private val uiScope = CoroutineScope(Dispatchers.Main + job)
+    private var foundUser: User? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
-        setSupportActionBar(findViewById(R.id.login_toolbar))
+        setSupportActionBar(toolbar)
         initViews()
         initListeners()
         val application = requireNotNull(this).application
@@ -66,7 +69,6 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
 
     private fun configureGoogleSignIn(){
         mGoogleSignInOptions = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken("1:816570324968:android:40fce80fa9d53a72baf65d")
             .requestEmail()
             .build()
         mGoogleSignInClient = GoogleSignIn.getClient(this, mGoogleSignInOptions)
@@ -109,18 +111,25 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
         loginButton.setOnClickListener(this)
         sign_in_button.setOnClickListener(this)
     }
-    private fun userLogin(){
+    private fun userLogin() {
         val uname = username.text.toString()
         val pwd = HashUtils.sha1(password.text.toString())
-        var foundUser:User? = null
-        uiScope.launch { withContext(Dispatchers.IO){foundUser = userDao.findUser(uname, pwd) }}
+        uiScope.launch {
+            foundUser = findUserResult(uname, pwd)
+        }
         if(foundUser != null){
             //logged in user id
-            sharedPreferences.edit().putInt("userid", foundUser!!.uid).apply()
+            sharedPreferences.edit().putLong("userid", foundUser!!.uid).apply()
             sharedPreferences.edit().putBoolean("loggedIn", true).apply()
             val intent = Intent(this, MainActivity::class.java)
             startActivity(intent)
             finish()
+        }
+    }
+
+    private suspend fun findUserResult(uname: String, pwd: String): User? {
+        return withContext(Dispatchers.IO){
+            userDao.findUser(uname, pwd)
         }
     }
 
@@ -138,6 +147,11 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
             finish()
         }
         super.onStart()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        job.cancel()
     }
 
 }
