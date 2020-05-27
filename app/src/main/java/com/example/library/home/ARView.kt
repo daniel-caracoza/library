@@ -2,6 +2,7 @@ package com.example.library.home
 
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraCharacteristics
@@ -10,19 +11,21 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.util.SparseIntArray
-import android.view.GestureDetector
-import android.view.MotionEvent
-import android.view.Surface
-import android.view.View
+import android.view.*
+import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import com.example.library.R
 import com.example.library.R.layout.boxlayout
+import com.example.library.favorites.FavoritesActivity
+import com.example.library.settings.SettingsActivity
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.ar.core.*
 import com.google.ar.core.exceptions.CameraNotAvailableException
 import com.google.ar.core.exceptions.UnavailableException
@@ -33,11 +36,12 @@ import com.google.firebase.ml.vision.FirebaseVision
 import com.google.firebase.ml.vision.common.FirebaseVisionImage
 import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata
 import com.google.firebase.ml.vision.text.FirebaseVisionTextRecognizer
+import kotlinx.android.synthetic.main.activity_a_r_scene_view.*
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.CompletableFuture
 
-class ARView : AppCompatActivity() {
+class ARView : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelectedListener{
 
     private lateinit var sceneView : ArSceneView
     private lateinit var textBox: TextView
@@ -46,15 +50,22 @@ class ARView : AppCompatActivity() {
     private var boxPlaced = false
     private var loadingFinished = false
     private var installRequested = false
-    private val imageAnalyzer = ImageAnalyzer()
+    private lateinit var frameLayout: FrameLayout
+    private lateinit var navigationView: BottomNavigationView
     private var time = LocalDateTime.MIN
     private var detector: FirebaseVisionTextRecognizer = FirebaseVision.getInstance().onDeviceTextRecognizer
     private lateinit var gestureDetector: GestureDetector
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_a_r_scene_view)
-        sceneView = findViewById(R.id.ar_scene_view)
+        //setContentView(R.layout.activity_a_r_scene_view)
+        val constraintLayout:ConstraintLayout = layoutInflater.inflate(R.layout.activity_a_r_scene_view, null) as ConstraintLayout
+        frameLayout = constraintLayout.findViewById(R.id.ar_frame_layout)
+        sceneView = frameLayout.findViewById(R.id.ar_scene_view)
+        navigationView = constraintLayout.findViewById(R.id.bottom_navigation)
+        navigationView.setOnNavigationItemSelectedListener(this)
+        super.setContentView(constraintLayout)
+        setSupportActionBar(toolbar)
         val box = ViewRenderable.builder().setView(this, boxlayout).build()
         CompletableFuture.allOf(box).handle { t, throwable ->
             if(throwable != null){
@@ -93,6 +104,7 @@ class ARView : AppCompatActivity() {
             return@setOnTouchListener false
         }
     }
+
 
     private fun getCurrentTime(): String{
         val current = LocalDateTime.now()
@@ -359,5 +371,27 @@ class ARView : AppCompatActivity() {
         if(!loadingFinished){
             Toast.makeText(this, "Searching for surfaces", Toast.LENGTH_LONG).show()
         }
+    }
+
+    override fun onNavigationItemSelected(item: MenuItem): Boolean {
+        navigationView.postDelayed({
+            when(item.itemId) {
+                R.id.account -> startActivity(Intent(this, SettingsActivity::class.java))
+                R.id.cameraView -> startActivity(Intent(this, ARView::class.java))
+                R.id.favoriteList -> startActivity(Intent(this, FavoritesActivity::class.java))
+            }
+            finish()
+        }, 100)
+        return true
+    }
+
+    private fun updateNavigationBarState(){
+        val actionId = R.id.cameraView
+        selectBottomNavigationBarItem(actionId)
+    }
+
+    private fun selectBottomNavigationBarItem(itemId: Int){
+        val menuItem = navigationView.menu.findItem(itemId)
+        menuItem.isChecked = true
     }
 }
