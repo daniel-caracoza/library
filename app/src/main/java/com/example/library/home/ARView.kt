@@ -47,6 +47,7 @@ class ARView : AppCompatActivity() {
     private var loadingFinished = false
     private var installRequested = false
     private val imageAnalyzer = ImageAnalyzer()
+    private var time = LocalDateTime.MIN
     private var detector: FirebaseVisionTextRecognizer = FirebaseVision.getInstance().onDeviceTextRecognizer
     private lateinit var gestureDetector: GestureDetector
 
@@ -101,41 +102,46 @@ class ARView : AppCompatActivity() {
 
     private fun onIncreaseTime(frameTime: FrameTime){
         //textBox.text = getCurrentTime()
-        val image = sceneView.arFrame?.acquireCameraImage()
-        if(image != null){
-            val camId = getCameraId(this, CameraCharacteristics.LENS_FACING_BACK)
-            val rotation =getRotationCompensation(camId, this@ARView as Activity, this)
-            val firebaseVisionImage = FirebaseVisionImage.fromMediaImage(image, rotation)
-            val result = detector.processImage(firebaseVisionImage)
-                    .addOnSuccessListener { firebaseVisionText ->
-                        val resultText = firebaseVisionText.text
-                        for (block in firebaseVisionText.textBlocks) {
-                            val blockText = block.text
-                            val blockConfidence = block.confidence
-                            val blockLanguages = block.recognizedLanguages
-                            val blockCornerPoints = block.cornerPoints
-                            val blockFrame = block.boundingBox
-                            for (line in block.lines) {
-                                val lineText = line.text
-                                textBox.text = lineText
-                                val lineConfidence = line.confidence
-                                val lineLanguages = line.recognizedLanguages
-                                val lineCornerPoints = line.cornerPoints
-                                val lineFrame = line.boundingBox
-                                for (element in line.elements) {
-                                    val elementText = element.text
-                                    val elementConfidence = element.confidence
-                                    val elementLanguages = element.recognizedLanguages
-                                    val elementCornerPoints = element.cornerPoints
-                                    val elementFrame = element.boundingBox
+        val testTime = LocalDateTime.now()
+        if(time.plusSeconds(1).isBefore(testTime)) {
+            time = testTime
+            val image = sceneView.arFrame?.acquireCameraImage()
+            if (image != null) {
+                val camId = getCameraId(this, CameraCharacteristics.LENS_FACING_BACK)
+                val rotation = getRotationCompensation(camId, this@ARView as Activity, this)
+                val firebaseVisionImage = FirebaseVisionImage.fromMediaImage(image, rotation)
+                image.close()
+                val result = detector.processImage(firebaseVisionImage)
+                        .addOnSuccessListener { firebaseVisionText ->
+                            val resultText = firebaseVisionText.text
+                            for (block in firebaseVisionText.textBlocks) {
+                                val blockText = block.text
+                                val blockConfidence = block.confidence
+                                val blockLanguages = block.recognizedLanguages
+                                val blockCornerPoints = block.cornerPoints
+                                val blockFrame = block.boundingBox
+                                for (line in block.lines) {
+                                    val lineText = line.text
+                                    textBox.text = lineText
+                                    val lineConfidence = line.confidence
+                                    val lineLanguages = line.recognizedLanguages
+                                    val lineCornerPoints = line.cornerPoints
+                                    val lineFrame = line.boundingBox
+                                    for (element in line.elements) {
+                                        val elementText = element.text
+                                        val elementConfidence = element.confidence
+                                        val elementLanguages = element.recognizedLanguages
+                                        val elementCornerPoints = element.cornerPoints
+                                        val elementFrame = element.boundingBox
+                                    }
                                 }
                             }
                         }
-                    }
-                    .addOnFailureListener { e ->
-                        // Task failed with an exception
-                        // ...
-                    }
+                        .addOnFailureListener { e ->
+                            // Task failed with an exception
+                            // ...
+                        }
+            }
         }
     }
 
@@ -227,7 +233,7 @@ class ARView : AppCompatActivity() {
                        }
                    }
                    boxPlaced = true
-                   textBox.text = getCurrentTime()
+                   textBox.text = "Library++"
                }
            }
 
