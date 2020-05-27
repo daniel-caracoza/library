@@ -57,7 +57,7 @@ class ApplicationRepository(private val database: AppDatabase) {
      */
     suspend fun googleBooksSearchRequest(keyword: String): Items {
         return withContext(Dispatchers.IO) {
-            val parameters = mapOf("q" to keyword, "key" to googleApiKey)
+            val parameters = mapOf("q" to keyword, "maxResults" to "5",  "key" to googleApiKey)
             GoogleBooksApiService.GoogleBooksApi.retrofitService.performSearch(parameters)
         }
     }
@@ -76,7 +76,7 @@ class ApplicationRepository(private val database: AppDatabase) {
     /*
      *  function to add favorite to Model
      */
-    suspend fun addFavorite(favorite: Favorite){
+    suspend fun addFavoriteAsync(favorite: Favorite){
         withContext(Dispatchers.IO){
             database.favoriteDao.insertAll(favorite)
         }

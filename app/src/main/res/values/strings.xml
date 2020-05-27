@@ -12,9 +12,8 @@
     <string name="google">Sign in with Google</string>
     <string name="sign_up">Sign Up</string>
     <string name="account_exists">Already have an account? Sign in</string>
-    <string name="show_prices">Toggle Price</string>
-    <string name="show_review">Toggle Reviews</string>
-    <string name="show_recommendations">Toggle Recommendations</string>
+    <string name="search_by_title">Search By Title</string>
+    <string name="search_by_isbn">Search By ISBN</string>
     <string name="favorite">Favorites</string>
     <string name="title_camera">Camera View</string>
     <string name="title_account">Account</string>
@@ -24,8 +23,24 @@
     <string name="uri_placeholder">Uri placeholder</string>
     <string name="fullname">Full Name</string>
     <string name="add_favorite">Add to Favorites</string>
+    <string name="mark_favorite">Mark Favorite</string>
+    <string name="toggle_search">Toggle Search</string>
+    <string name="toggle_view">Toggle AR Views</string>
+    <string name="check_coin">Prices</string>
+    <string name="check_info">Author Related</string>
+    <string name="check_book">Book Information</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="clear">Clear</string>
-
+    <string name="price">Price:</string>
+    <string name="buy_google">Buy</string>
+    <string name="book_description">Description:</string>
+    <string name="book_page_count">Page Count:</string>
+    <string name="book_average_rating">Average Rating:</string>
+    <string name="book_publisher">Publisher:</string>
+    <string name="author_name">Author:</string>
+    <string name="author_books">Books:</string>
+    <string name="book_categories">Categories:</string>
+    <string name="placeholder">placeholder!</string>
+    <string name="not_available">N/A</string>
 </resources>

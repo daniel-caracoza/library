@@ -1,0 +1,50 @@
+{
+  materials: [
+    {
+      name: 'Material.006',
+      parameters: [
+        {
+          baseColor: 'CHAHIN_NOTEBOOK_TEXTURE',
+        },
+        {
+          baseColorTint: [
+            0.64000000000000001,
+            0.64000000000000001,
+            0.64000000000000001,
+            1,
+          ],
+        },
+        {
+          metallic: 1,
+        },
+        {
+          roughness: 0.14280000000000001,
+        },
+        {
+          opacity: null,
+        },
+      ],
+      source: 'build/sceneform_sdk/default_materials/obj_material.sfm',
+    },
+  ],
+  model: {
+    attributes: [
+      'Position',
+      'TexCoord',
+      'Orientation',
+    ],
+    scale:0.2,
+    collision: {},
+    file: 'sampledata/models/book/CHAHIN_NOTEBOOK.obj',
+    name: 'CHAHIN_NOTEBOOK',
+    recenter: 'root',
+  },
+  samplers: [
+    {
+      file: 'sampledata/models/book/CHAHIN_NOTEBOOK_TEXTURE.jpg',
+      name: 'CHAHIN_NOTEBOOK_TEXTURE',
+      pipeline_name: 'CHAHIN_NOTEBOOK_TEXTURE.jpg',
+    },
+  ],
+  version: '0.54:2',
+}

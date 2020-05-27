@@ -12,7 +12,6 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import com.example.library.R
 import com.example.library.database.AppDatabase
-import com.example.library.database.User
 import com.example.library.databinding.FragmentFavoriteListFragmentBinding
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount

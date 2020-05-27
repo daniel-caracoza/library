@@ -1,27 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <group
-        android:id="@+id/view_toggle_menu"
-        android:checkableBehavior="single"/>
-        <item
-            android:id="@+id/toggle_price"
-            android:checked="true"
-            android:title="@string/show_prices"
-            android:checkable="true"
-            />
-        <item
-            android:id="@+id/toggle_reviews"
-            android:checked="true"
-            android:checkable="true"
-            android:title="@string/show_review"
-            />
-        <item
-            android:id="@+id/toggle_recommendations"
-            android:checked="true"
-            android:checkable="true"
-            android:title="@string/show_recommendations"/>
-    <group/>
+    <item
+        android:id="@+id/mark_favorite"
+        android:icon="@drawable/ic_action_name"
+        android:title="@string/mark_favorite"
+        app:showAsAction="ifRoom"/>
 
+    <item
+        android:id="@+id/toggle_menu"
+        android:title="@string/toggle_search">
+        <menu>
+            <group android:checkableBehavior="single">
+                <item
+                    android:id="@+id/toggle_title_search"
+                    android:checked="true"
+                    android:title="@string/search_by_title" />
+                <item
+                    android:id="@+id/toggle_isbn_search"
+                    android:title="@string/search_by_isbn" />
+            </group>
+        </menu>
+    </item>
+
+    <item
+        android:id="@+id/check_menu"
+        android:title="@string/toggle_view">
+
+        <menu>
+            <group android:checkableBehavior="all">
+                <item
+                    android:id="@+id/check_coin_view"
+                    android:title="@string/check_coin"
+                    android:checked="true"/>
+                <item
+                    android:id="@+id/check_info_view"
+                    android:title="@string/check_info"
+                    android:checked="true"/>
+                <item
+                    android:id="@+id/check_book_view"
+                    android:title="@string/check_book"
+                    android:checked="true"/>
+
+            </group>
+        </menu>
+    </item>
 
 </menu>

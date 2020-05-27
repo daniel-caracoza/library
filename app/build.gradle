@@ -45,7 +45,6 @@ android {
 dependencies {
     def nav_version = "2.2.2"
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'com.google.ar.sceneform.ux:sceneform-ux:1.15.0'
     implementation 'de.javagl:obj:0.2.1'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'com.google.firebase:firebase-analytics:17.4.0'
@@ -110,7 +109,24 @@ dependencies {
 
     //sceneform
     implementation "com.google.ar.sceneform.ux:sceneform-ux:1.15.0"
+    implementation "com.google.ar.sceneform:core:1.15.0"
 
     implementation 'com.google.firebase:firebase-core:17.4.0'
 
 }
+apply plugin: 'com.google.ar.sceneform.plugin'
+
+sceneform.asset('sampledata/models/book/CHAHIN_NOTEBOOK.obj',
+        'default',
+        'sampledata/models/book/CHAHIN_NOTEBOOK.sfa',
+        'src/main/assets/Book')
+
+sceneform.asset('sampledata/models/coin/Coin.obj',
+        'default',
+        'sampledata/models/coin/Coin.sfa',
+        'src/main/assets/Coin')
+
+sceneform.asset('sampledata/models/info/model.obj',
+        'default',
+        'sampledata/models/info/Model.sfa',
+        'src/main/assets/Model')

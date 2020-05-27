@@ -1,48 +1,73 @@
 package com.example.library.home
 
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.view.*
 import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.example.library.ApplicationRepository
 import com.example.library.R
+import com.example.library.database.AppDatabase
+import com.example.library.database.Favorite
 import com.example.library.favorites.FavoritesActivity
+import com.example.library.network.GoogleBook
+import com.example.library.network.Items
 import com.example.library.settings.SettingsActivity
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.ar.core.*
 import com.google.ar.core.ArCoreApk.InstallStatus
-import com.google.ar.core.exceptions.*
+import com.google.ar.core.exceptions.CameraNotAvailableException
+import com.google.ar.core.exceptions.UnavailableException
 import com.google.ar.sceneform.*
+import com.google.ar.sceneform.math.Vector3
+import com.google.ar.sceneform.rendering.ModelRenderable
 import com.google.ar.sceneform.rendering.ViewRenderable
 import com.google.ar.sceneform.ux.PlaneDiscoveryController
 import kotlinx.android.synthetic.main.activity_main.*
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+import kotlinx.coroutines.*
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ExecutionException
 
 class MainActivity() : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelectedListener,
-Scene.OnPeekTouchListener, Scene.OnUpdateListener, Node.OnTapListener {
+Scene.OnPeekTouchListener, Scene.OnUpdateListener {
 
     private lateinit var arSceneView: ArSceneView
     private lateinit var updateTextView: TextView
     private var installRequested = false
     private val cameraRequestCode: Int = 1
     private var renderableExists = false
+    private lateinit var repository: ApplicationRepository
     private lateinit var navigationView: BottomNavigationView
     private lateinit var frameLayout: FrameLayout
     private lateinit var gestureDetector: GestureDetector
     private lateinit var planeDiscoveryController: PlaneDiscoveryController
+    private lateinit var bookModelRenderable: ModelRenderable
+    private lateinit var coinModelRenderable: ModelRenderable
+    private lateinit var infoModelRenderable: ModelRenderable
+    private var coinNode: Node? = null
+    private var bookNode: Node? = null
+    private var authorNode: Node? = null
+    private var favorite: Favorite? = null
+    private var googleBookItems: Items? = null
+    private var googleBook: Items? = null
+    private val job = Job()
+    private val uiScope = CoroutineScope(Dispatchers.Main + job)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
+        val application = requireNotNull(this).application
+        val dataSource = AppDatabase.getInstance(application)
+        repository = ApplicationRepository(dataSource)
         gestureDetector = GestureDetector(this, object: GestureDetector.SimpleOnGestureListener(){
             override fun onSingleTapUp(e: MotionEvent?): Boolean {
                 onSingleTap(e)
@@ -53,6 +78,38 @@ Scene.OnPeekTouchListener, Scene.OnUpdateListener, Node.OnTapListener {
                 return true
             }
         })
+
+
+        // Build all the models.
+        val bookStage = ModelRenderable.builder().setSource(this, Uri.parse("Book.sfb")).build()
+        val coinStage = ModelRenderable.builder().setSource(this, Uri.parse("Coin.sfb")).build()
+        val modelStage = ModelRenderable.builder().setSource(this, Uri.parse("Model.sfb")).build()
+
+        CompletableFuture.allOf(
+            bookStage,
+            coinStage,
+            modelStage
+        )
+            .handle<Any?> { notUsed: Void?, throwable: Throwable? ->
+                // When you build a Renderable, Sceneform loads its resources in the background while
+                // returning a CompletableFuture. Call handle(), thenAccept(), or check isDone()
+                // before calling get().
+                try {
+                    bookModelRenderable = bookStage.get()
+                    coinModelRenderable = coinStage.get()
+                    infoModelRenderable = modelStage.get()
+
+                } catch (ex: InterruptedException) {
+                    println(ex.message)
+                } catch (ex: ExecutionException) {
+                    println(ex.message)
+                }
+                null
+            }
+        /*
+            Hardcoded api calls to fill model-views with information
+         */
+        initiateApiRequests()
     }
 
     override fun setContentView(layoutResID: Int) {
@@ -72,12 +129,6 @@ Scene.OnPeekTouchListener, Scene.OnUpdateListener, Node.OnTapListener {
         super.setContentView(constraintLayout)
     }
 
-    //arbitrary function to show realtime update to ViewRenderable
-    private fun getCurrentTime(): String {
-        val current = LocalDateTime.now()
-        val format = DateTimeFormatter.ofPattern("HH:mm:ss")
-        return current.format(format)
-    }
 
     //called everytime the frame is about to update
     override fun onUpdate(frameTime: FrameTime){
@@ -88,7 +139,6 @@ Scene.OnPeekTouchListener, Scene.OnUpdateListener, Node.OnTapListener {
                 planeDiscoveryController.hide()
             }
         }
-        updateTextView.text = getCurrentTime()
     }
 
     override fun onPeekTouch(hitTestResult: HitTestResult?, motionEvent: MotionEvent?) {
@@ -106,49 +156,38 @@ Scene.OnPeekTouchListener, Scene.OnUpdateListener, Node.OnTapListener {
                 for(hit:HitResult in hits){
                     val trackable = hit.trackable
                     if(trackable is Plane && trackable.isPoseInPolygon(hit.hitPose)){
-                        initializeInfoCard(hit.createAnchor())
+                        val anchor = hit.createAnchor()
+                        val anchorNode = AnchorNode(anchor)
+                        anchorNode.setParent(arSceneView.scene)
+                        val bookView = createBookView()
+                        anchorNode.addChild(bookView)
                         arSceneView.planeRenderer.isVisible = false
                         break
                     }
                 }
             }
-            renderableExists = true
+            renderableExists = !renderableExists
         }
     }
 
-    private fun initializeInfoCard(createAnchor: Anchor){
-        ViewRenderable.builder()
-            .setView(this, R.layout.info_card)
-            .build()
-            .thenAccept {
-                it.isShadowCaster = false
-                it.isShadowReceiver = false
-                addCardToScene(createAnchor, it)
-            }
-            .exceptionally {
-                val builder = AlertDialog.Builder(this)
-                builder.setMessage(it.message)
-                    .setTitle("error")
-                val dialog = builder.create()
-                dialog.show()
-                return@exceptionally null
-            }
-    }
+    private fun createBookView(): Node {
+        val base = Node()
+        coinNode = PriceNode(this, googleBook!!.items[0])
+        coinNode!!.renderable = coinModelRenderable
+        coinNode!!.setParent(base)
+        coinNode!!.localPosition = Vector3(-0.2f, 0.1f, 0.0f)
 
-    private fun addCardToScene(createAnchor: Anchor, renderable: ViewRenderable){
-        val anchorNode = AnchorNode(createAnchor)
-        val node = Node()
-        updateTextView = renderable.view as TextView
-        updateTextView.text = getCurrentTime()
-        node.renderable = renderable
-        node.setParent(anchorNode)
-        arSceneView.scene.addChild(anchorNode)
-    }
+        bookNode = BookNode(this, googleBook!!.items[0])
+        bookNode!!.renderable = bookModelRenderable
+        bookNode!!.setParent(base)
+        bookNode!!.localPosition = Vector3(0.0f, 0.1f, 0.0f)
 
+        authorNode = AuthorNode(this, googleBook!!.items[0], googleBookItems!!)
+        authorNode!!.renderable = infoModelRenderable
+        authorNode!!.setParent(base)
+        authorNode!!.localPosition = Vector3(0.2f, 0.1f, 0.0f)
 
-    private fun getScreenCenter() :android.graphics.Point {
-        val vw = findViewById<View>(android.R.id.content)
-        return android.graphics.Point(vw.width / 2 , vw.height / 2)
+        return base
     }
 
     override fun onResume() {
@@ -218,16 +257,49 @@ Scene.OnPeekTouchListener, Scene.OnUpdateListener, Node.OnTapListener {
         return true
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        return when (item.itemId) {
-            R.id.view_toggle_menu -> true
-            else -> super.onOptionsItemSelected(item)
+    //set functionality for the selected items in the toolbar menu
+    override fun onOptionsItemSelected(item: MenuItem) = when(item.itemId) {
+        //set response to toggling option menu here!
+        R.id.toggle_isbn_search, R.id.toggle_title_search -> {
+            item.isChecked = !(item.isChecked)
+            true
         }
-    }
 
+        R.id.mark_favorite -> {
+            if(favorite != null){
+                uiScope.launch {
+                        withContext(Dispatchers.IO){
+                            repository.addFavoriteAsync(favorite!!)
+                        }
+                    }
+                }
+            true
+        }
+
+        R.id.check_coin_view -> {
+            //toggle coin node
+            coinNode!!.isEnabled = !(coinNode!!.isEnabled)
+            item.isChecked = !(item.isChecked)
+            true
+        }
+
+        R.id.check_info_view -> {
+            //toggle info node
+            authorNode!!.isEnabled = !(authorNode!!.isEnabled)
+            item.isChecked = !(item.isChecked)
+            true
+        }
+
+        R.id.check_book_view -> {
+            //toggle book node
+            bookNode!!.isEnabled = !(bookNode!!.isEnabled)
+            item.isChecked = !(item.isChecked)
+            true
+        }
+
+        else -> super.onOptionsItemSelected(item)
+
+    }
 
     override fun onStart() {
         super.onStart()
@@ -246,6 +318,7 @@ Scene.OnPeekTouchListener, Scene.OnUpdateListener, Node.OnTapListener {
         super.onDestroy()
         arSceneView.destroy()
         planeDiscoveryController.hide()
+        job.cancel()
     }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
@@ -270,7 +343,11 @@ Scene.OnPeekTouchListener, Scene.OnUpdateListener, Node.OnTapListener {
         menuItem.isChecked = true
     }
 
-    override fun onTap(p0: HitTestResult?, p1: MotionEvent?) {
-        TODO("Not yet implemented")
+    private fun initiateApiRequests(){
+            val isbn = "9780451524935"
+            val author = "inauthor:george+orwell"
+            googleBook = runBlocking {repository.googleBooksSearchRequest("isbn:${isbn}")}
+            googleBookItems = runBlocking {repository.googleBooksSearchRequest(author)}
     }
+
 }

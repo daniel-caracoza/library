@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.hamcrest.CoreMatchers.equalTo
+import org.junit.After
 import org.junit.Assert.*
 
 
@@ -29,5 +30,10 @@ class GoodReadsRequestTest {
             val response = GoodreadsApi.retrofitService.getSearchProperties(parameters)
             assertThat("1984", equalTo(response.book.title))
         }
+    }
+
+    @After
+    fun destroy(){
+        viewModelJob.cancel()
     }
 }

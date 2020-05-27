@@ -63,6 +63,7 @@ class Author {
     @Path("books")
     @Element
     lateinit var books: List<Book>
+    
 }
 @Xml
 class Book {
