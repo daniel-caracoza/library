@@ -47,6 +47,7 @@ class ARView : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelecte
     private lateinit var textBox: TextView
     private lateinit var boxRenderable : ViewRenderable
     private var started = false
+    var returnText = ""
     private var boxPlaced = false
     private var loadingFinished = false
     private var installRequested = false
@@ -57,8 +58,8 @@ class ARView : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelecte
     private lateinit var gestureDetector: GestureDetector
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        //Inflation and set up of the activity
         super.onCreate(savedInstanceState)
-        //setContentView(R.layout.activity_a_r_scene_view)
         val constraintLayout:ConstraintLayout = layoutInflater.inflate(R.layout.activity_a_r_scene_view, null) as ConstraintLayout
         frameLayout = constraintLayout.findViewById(R.id.ar_frame_layout)
         sceneView = frameLayout.findViewById(R.id.ar_scene_view)
@@ -66,22 +67,28 @@ class ARView : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelecte
         navigationView.setOnNavigationItemSelectedListener(this)
         super.setContentView(constraintLayout)
         setSupportActionBar(toolbar)
+        //Initializing the renderable text box
         val box = ViewRenderable.builder().setView(this, boxlayout).build()
         CompletableFuture.allOf(box).handle { t, throwable ->
             if(throwable != null){
                 Utils.displayError(this, "Unable to load renderable", throwable)
             }
             try{
+                //loading renderable text box
                 boxRenderable = box.get()
                 loadingFinished = true
                 textBox = boxRenderable.view.findViewById(R.id.topText)
+                //adding onUpdateListener to update the text on the text box
                 sceneView.scene.addOnUpdateListener(this::onIncreaseTime)
             } catch (e : Exception){
                 Utils.displayError(this, "Unable to render", e)
             }
         }
-        sceneView.scene.addOnUpdateListener(this::onUpdateFrame)
-        sceneView.planeRenderer.isVisible = false
+        //onUpdateListener for the ARSceneView to place the box
+        sceneView.scene.addOnUpdateListener(this::placeBox)
+        //Turn the dots on or off for finding planes
+        sceneView.planeRenderer.isVisible = true
+        //Set up of the GestureDetector which places the box when a plane is found
         gestureDetector = GestureDetector(this, object: GestureDetector.SimpleOnGestureListener(){
             override fun onSingleTapUp(e: MotionEvent): Boolean {
                 val frame = sceneView.arFrame
@@ -97,6 +104,7 @@ class ARView : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelecte
                 return false
             }
         })
+        //Box gets automatically placed when a plane is found, no tapping required
         sceneView.scene.setOnTouchListener{ hitTestReult: HitTestResult, event : MotionEvent->
             if(!boxPlaced){
                 return@setOnTouchListener gestureDetector.onTouchEvent(event)
@@ -105,7 +113,7 @@ class ARView : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelecte
         }
     }
 
-
+    //Unneeded function for testing
     private fun getCurrentTime(): String{
         val current = LocalDateTime.now()
         val format = DateTimeFormatter.ofPattern("HH:mm:ss")
@@ -113,38 +121,40 @@ class ARView : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelecte
     }
 
     private fun onIncreaseTime(frameTime: FrameTime){
-        //textBox.text = getCurrentTime()
+        //Only update the text box every second
         val testTime = LocalDateTime.now()
         if(time.plusSeconds(1).isBefore(testTime)) {
             time = testTime
+            //If the camera image is not null get the frame from the ARSceneView
             val image = sceneView.arFrame?.acquireCameraImage()
             if (image != null) {
+                //There's no good way to get the cameraID from the ARSceneView,
+                //that's one of the things that the ARFragment does.
+                //So I just automatically get the back lens for the camera that is being used
                 val camId = getCameraId(this, CameraCharacteristics.LENS_FACING_BACK)
+                //Firebase needs to know the rotation of the phone, but wants it in it's special way
                 val rotation = getRotationCompensation(camId, this@ARView as Activity, this)
                 val firebaseVisionImage = FirebaseVisionImage.fromMediaImage(image, rotation)
+                //Once we have the image as a Firebase image we can close the image so it's not taking up space
                 image.close()
+                //This is the basic Firebase text extraction code given by Google
                 val result = detector.processImage(firebaseVisionImage)
                         .addOnSuccessListener { firebaseVisionText ->
                             val resultText = firebaseVisionText.text
                             for (block in firebaseVisionText.textBlocks) {
                                 val blockText = block.text
+                                textBox.text = blockText
+                                returnText = blockText
                                 val blockConfidence = block.confidence
                                 val blockLanguages = block.recognizedLanguages
-                                val blockCornerPoints = block.cornerPoints
-                                val blockFrame = block.boundingBox
                                 for (line in block.lines) {
                                     val lineText = line.text
-                                    textBox.text = lineText
                                     val lineConfidence = line.confidence
                                     val lineLanguages = line.recognizedLanguages
-                                    val lineCornerPoints = line.cornerPoints
-                                    val lineFrame = line.boundingBox
                                     for (element in line.elements) {
                                         val elementText = element.text
                                         val elementConfidence = element.confidence
                                         val elementLanguages = element.recognizedLanguages
-                                        val elementCornerPoints = element.cornerPoints
-                                        val elementFrame = element.boundingBox
                                     }
                                 }
                             }
@@ -157,8 +167,8 @@ class ARView : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelecte
         }
     }
 
+    //This is for the Firebase rotations
     private val ORIENTATIONS = SparseIntArray()
-
     init {
         ORIENTATIONS.append(Surface.ROTATION_0, 90)
         ORIENTATIONS.append(Surface.ROTATION_90, 0)
@@ -202,27 +212,8 @@ class ARView : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelecte
         return result
     }
 
-    private class ImageAnalyzer : ImageAnalysis.Analyzer {
-        private fun degreesToFirebaseRotation(degrees: Int): Int = when(degrees) {
-            0 -> FirebaseVisionImageMetadata.ROTATION_0
-            90 -> FirebaseVisionImageMetadata.ROTATION_90
-            180 -> FirebaseVisionImageMetadata.ROTATION_180
-            270 -> FirebaseVisionImageMetadata.ROTATION_270
-            else -> throw Exception("Rotation must be 0, 90, 180, or 270.")
-        }
-
-        override fun analyze(imageProxy: ImageProxy?, degrees: Int) {
-            val mediaImage = imageProxy?.image
-            val imageRotation = degreesToFirebaseRotation(degrees)
-            if (mediaImage != null) {
-                val image = FirebaseVisionImage.fromMediaImage(mediaImage, imageRotation)
-                // Pass image to an ML Kit Vision API
-                // ...
-            }
-        }
-    }
-
-   private fun onUpdateFrame(frameTime : FrameTime){
+    //This is the automatic box placer
+   private fun placeBox(frameTime : FrameTime){
         val frame = sceneView.arFrame
        if(frame != null){
            val var3 = frame.getUpdatedTrackables(Plane::class.java).iterator()
@@ -252,6 +243,7 @@ class ARView : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelecte
        }
    }
 
+    //finds the screen center
     private fun Frame.screenCenter(): Vector3{
         val vw = findViewById<View>(android.R.id.content)
         return Vector3(vw.width / 2f, vw.height / 2f, 0f)
@@ -265,6 +257,7 @@ class ARView : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelecte
         start()
     }
 
+    //checks for permissions on start
     private fun startSession(){
         if(ContextCompat.checkSelfPermission(this, "android.permission.CAMERA")
         == PackageManager.PERMISSION_GRANTED){
@@ -283,6 +276,7 @@ class ARView : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelecte
         }
     }
 
+    //function to get the camera id from some facing camera
     fun getCameraId(context: Context, facing: Int): String {
         val manager = context.getSystemService(CAMERA_SERVICE) as CameraManager
 
@@ -329,26 +323,14 @@ class ARView : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelecte
         }
     }
 
-
-    private fun onSingleTap(tap: MotionEvent){
-        if(!loadingFinished){
-            return
-        }
-        var frame = sceneView.arFrame
-        if(frame != null){
-            if(!boxPlaced && tryPlaceBox(tap, frame)){
-                boxPlaced = true
-            }
-        }
-    }
-
+    //box node maker for placing
     private fun tryPlaceBox(tap: MotionEvent, frame: Frame): Boolean{
-        if(tap != null && frame.camera.trackingState == TrackingState.TRACKING){
+        if(frame.camera.trackingState == TrackingState.TRACKING){
             for(hit in frame.hitTest(tap)){
-                var trackable = hit.trackable
+                val trackable = hit.trackable
                 if(trackable is Plane && trackable.isPoseInPolygon(hit.hitPose)){
-                    var anchor = hit.createAnchor()
-                    var anchorNode = AnchorNode(anchor)
+                    val anchor = hit.createAnchor()
+                    val anchorNode = AnchorNode(anchor)
                     anchorNode.setParent(sceneView.scene)
                     createBox()
                     return true
@@ -358,6 +340,7 @@ class ARView : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelecte
         return false
     }
 
+    //Create renderable
     private fun createBox(): Node{
         val base = Node()
         val box = Node()
@@ -367,11 +350,6 @@ class ARView : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelecte
         return base
     }
 
-    private fun showLoadingMessage(){
-        if(!loadingFinished){
-            Toast.makeText(this, "Searching for surfaces", Toast.LENGTH_LONG).show()
-        }
-    }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         navigationView.postDelayed({
