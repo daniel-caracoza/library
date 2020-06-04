@@ -12,6 +12,7 @@ import android.os.Bundle
 import android.util.Log
 import android.util.SparseIntArray
 import android.view.*
+import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -37,17 +38,20 @@ import com.google.firebase.ml.vision.common.FirebaseVisionImage
 import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata
 import com.google.firebase.ml.vision.text.FirebaseVisionTextRecognizer
 import kotlinx.android.synthetic.main.activity_a_r_scene_view.*
+import kotlinx.android.synthetic.main.boxlayout.*
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.CompletableFuture
+import kotlin.math.abs
 
 class ARView : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelectedListener{
 
     private lateinit var sceneView : ArSceneView
-    private lateinit var textBox: TextView
+    private lateinit var textBox1: TextView
+    private lateinit var textBox2 : TextView
     private lateinit var boxRenderable : ViewRenderable
+    private lateinit var okButton : Button
     private var started = false
-    var returnText = ""
     private var boxPlaced = false
     private var loadingFinished = false
     private var installRequested = false
@@ -56,6 +60,11 @@ class ARView : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelecte
     private var time = LocalDateTime.MIN
     private var detector: FirebaseVisionTextRecognizer = FirebaseVision.getInstance().onDeviceTextRecognizer
     private lateinit var gestureDetector: GestureDetector
+
+    companion object{
+        var returnText1 = ""
+        var returnText2 = ""
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         //Inflation and set up of the activity
@@ -77,7 +86,13 @@ class ARView : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelecte
                 //loading renderable text box
                 boxRenderable = box.get()
                 loadingFinished = true
-                textBox = boxRenderable.view.findViewById(R.id.topText)
+                textBox1 = boxRenderable.view.findViewById(R.id.topText)
+                textBox2 = boxRenderable.view.findViewById(R.id.bottomText)
+                okButton = boxRenderable.view.findViewById(R.id.OKbutton)
+                okButton.setOnClickListener {
+                    val dialog = DialogBox(returnText1, returnText2)
+                    dialog.show(supportFragmentManager, "DialogBox")
+                }
                 //adding onUpdateListener to update the text on the text box
                 sceneView.scene.addOnUpdateListener(this::onIncreaseTime)
             } catch (e : Exception){
@@ -141,16 +156,23 @@ class ARView : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelecte
                 val result = detector.processImage(firebaseVisionImage)
                         .addOnSuccessListener { firebaseVisionText ->
                             val resultText = firebaseVisionText.text
+                            var text1Height = 0
+                            var text2Height = 0
                             for (block in firebaseVisionText.textBlocks) {
                                 val blockText = block.text
-                                textBox.text = blockText
-                                returnText = blockText
                                 val blockConfidence = block.confidence
                                 val blockLanguages = block.recognizedLanguages
                                 for (line in block.lines) {
+                                    var height = line.boundingBox?.height()?.let { abs(it) }
                                     val lineText = line.text
                                     val lineConfidence = line.confidence
                                     val lineLanguages = line.recognizedLanguages
+
+                                        textBox2.text = textBox1.text
+                                        textBox1.text = lineText
+                                        returnText1 = lineText
+                                        returnText2 = textBox2.text.toString()
+
                                     for (element in line.elements) {
                                         val elementText = element.text
                                         val elementConfidence = element.confidence
@@ -236,7 +258,7 @@ class ARView : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelecte
                        }
                    }
                    boxPlaced = true
-                   textBox.text = "Library++"
+                   textBox1.text = "Library++"
                }
            }
 
