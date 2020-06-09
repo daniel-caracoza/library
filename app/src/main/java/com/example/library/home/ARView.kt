@@ -12,10 +12,7 @@ import android.os.Bundle
 import android.util.Log
 import android.util.SparseIntArray
 import android.view.*
-import android.widget.Button
-import android.widget.FrameLayout
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.ImageAnalysis
@@ -37,6 +34,7 @@ import com.google.firebase.ml.vision.FirebaseVision
 import com.google.firebase.ml.vision.common.FirebaseVisionImage
 import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata
 import com.google.firebase.ml.vision.text.FirebaseVisionTextRecognizer
+
 import kotlinx.android.synthetic.main.activity_a_r_scene_view.*
 import kotlinx.android.synthetic.main.boxlayout.*
 import java.time.LocalDateTime
@@ -51,6 +49,9 @@ class ARView : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelecte
     private lateinit var textBox2 : TextView
     private lateinit var boxRenderable : ViewRenderable
     private lateinit var okButton : Button
+    private lateinit var switch : Switch
+    private var text1Height = 0
+    private var text2Height = 0
     private var started = false
     private var boxPlaced = false
     private var loadingFinished = false
@@ -64,6 +65,8 @@ class ARView : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelecte
     companion object{
         var returnText1 = ""
         var returnText2 = ""
+        var barcode = false
+        var returnBarcode = ""
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -89,6 +92,7 @@ class ARView : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelecte
                 textBox1 = boxRenderable.view.findViewById(R.id.topText)
                 textBox2 = boxRenderable.view.findViewById(R.id.bottomText)
                 okButton = boxRenderable.view.findViewById(R.id.OKbutton)
+                switch = boxRenderable.view.findViewById(R.id.bcode_switch)
                 okButton.setOnClickListener {
                     val dialog = DialogBox(returnText1, returnText2)
                     dialog.show(supportFragmentManager, "DialogBox")
@@ -136,6 +140,8 @@ class ARView : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelecte
     }
 
     private fun onIncreaseTime(frameTime: FrameTime){
+        if(sceneView.arFrame == null)
+            return
         //Only update the text box every second
         val testTime = LocalDateTime.now()
         if(time.plusSeconds(1).isBefore(testTime)) {
@@ -152,27 +158,54 @@ class ARView : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelecte
                 val firebaseVisionImage = FirebaseVisionImage.fromMediaImage(image, rotation)
                 //Once we have the image as a Firebase image we can close the image so it's not taking up space
                 image.close()
+                if(switch.isChecked) {
+                    barcode = true
+                    val detector = FirebaseVision.getInstance()
+                        .visionBarcodeDetector
+                    val resultBC = detector.detectInImage(firebaseVisionImage)
+                        .addOnSuccessListener { barcodes ->
+                            // Task completed successfully
+                            for (barcode in barcodes) {
+                                val bounds = barcode.boundingBox
+                                val corners = barcode.cornerPoints
+
+                                val rawValue = barcode.rawValue
+
+                                if(rawValue != null){
+                                    returnBarcode = rawValue
+                                }
+                            }
+
+                            }
+                        .addOnFailureListener {
+                            // Task failed with an exception
+                            // ...
+                        }
+                }
+                if(!switch.isChecked){
+                    barcode = false
+                }
                 //This is the basic Firebase text extraction code given by Google
                 val result = detector.processImage(firebaseVisionImage)
                         .addOnSuccessListener { firebaseVisionText ->
                             val resultText = firebaseVisionText.text
-                            var text1Height = 0
-                            var text2Height = 0
                             for (block in firebaseVisionText.textBlocks) {
                                 val blockText = block.text
                                 val blockConfidence = block.confidence
                                 val blockLanguages = block.recognizedLanguages
                                 for (line in block.lines) {
-                                    var height = line.boundingBox?.height()?.let { abs(it) }
+                                    val height = line.boundingBox?.height()?.let { abs(it) }
                                     val lineText = line.text
                                     val lineConfidence = line.confidence
                                     val lineLanguages = line.recognizedLanguages
-
+                                    if(height != null) {
                                         textBox2.text = textBox1.text
                                         textBox1.text = lineText
                                         returnText1 = lineText
                                         returnText2 = textBox2.text.toString()
-
+                                        text2Height = text1Height
+                                        text1Height = height
+                                    }
                                     for (element in line.elements) {
                                         val elementText = element.text
                                         val elementConfidence = element.confidence

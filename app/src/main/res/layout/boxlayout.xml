@@ -1,22 +1,31 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/testview"
-    android:layout_width="120dp"
-    android:layout_height="140dp"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
     android:background="@drawable/rounded_bg"
     android:clipChildren="false"
     android:clipToPadding="false"
     android:orientation="vertical"
     android:padding="4dp">
 
+    <Switch
+        android:id="@+id/bcode_switch"
+        android:textColor="@android:color/white"
+        android:textSize="6pt"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Barcode" />
+
     <TextView
         android:id="@+id/topText"
+        android:textColor="@android:color/white"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textAlignment="center" />
 
-
     <TextView
         android:id="@+id/bottomText"
+        android:textColor="@android:color/white"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingTop="2dp"
@@ -26,7 +35,8 @@
         android:id="@+id/OKbutton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="OK" />
+        android:text="OK"
+        android:textSize="6pt"/>
 
 
 </LinearLayout>

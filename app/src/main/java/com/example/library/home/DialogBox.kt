@@ -6,10 +6,13 @@ import android.content.Context
 import android.content.DialogInterface
 import android.os.Bundle
 import android.text.Editable
+import android.view.View
+import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import androidx.fragment.app.DialogFragment
 import com.example.library.R
+import com.example.library.home.ARView.Companion.barcode
 import kotlinx.android.synthetic.main.dialog_box.*
 
 class DialogBox(text1: String, text2: String) : DialogFragment() {
@@ -20,17 +23,20 @@ class DialogBox(text1: String, text2: String) : DialogFragment() {
             // Use the Builder class for convenient dialog construction
             val builder = AlertDialog.Builder(it)
             val inflater = requireActivity().layoutInflater
-            builder.setView(inflater.inflate(R.layout.dialog_box, null))
+            val viewInflate = inflater.inflate(R.layout.dialog_box, null)
+            val mu = viewInflate.findViewById<Button>(R.id.switch_button)
+            mu.setOnClickListener{
+                val t = dialog?.author?.text
+                dialog?.author?.setText(dialog?.title?.text)
+                dialog?.title?.setText(t)
+            }
+            builder.setView(viewInflate)
             builder.setMessage("Is this correct?")
                 .setPositiveButton(
                     "Ok",
                     DialogInterface.OnClickListener { dialog, id ->
                         // FIRE ZE MISSILES!
                     })
-                .setNeutralButton("Switch, but OK", DialogInterface.OnClickListener{
-                    dialog, id ->
-
-                })
                 .setNegativeButton("Cancel",
                     DialogInterface.OnClickListener { dialog, id ->
                         // User cancelled the dialog
@@ -44,6 +50,11 @@ class DialogBox(text1: String, text2: String) : DialogFragment() {
         super.onResume()
         dialog?.title?.setText(text1)
         dialog?.author?.setText(text2)
+        if(barcode){
+            dialog?.titleText?.text = "Barcode"
+            dialog?.author?.visibility = View.INVISIBLE
+            dialog?.authorText?.visibility = View.INVISIBLE
+        }
     }
 
     override fun onDestroyView() {
