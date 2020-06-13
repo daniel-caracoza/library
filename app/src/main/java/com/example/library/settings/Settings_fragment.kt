@@ -4,10 +4,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.view.*
 import androidx.fragment.app.Fragment
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
@@ -49,13 +47,13 @@ class Settings_fragment : Fragment(), View.OnClickListener {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        setHasOptionsMenu(true)
         profile_image = view.findViewById<ImageView>(R.id.uri)
         acct_name = view.findViewById<TextView>(R.id.acct_name)
         acct_email = view.findViewById(R.id.email)
         view.findViewById<Button>(R.id.logout).setOnClickListener(this)
         googleAccount()
     }
-
 
     override fun onClick(v: View?) {
             when (v?.id) {
@@ -99,5 +97,22 @@ class Settings_fragment : Fragment(), View.OnClickListener {
         return withContext(Dispatchers.IO) {
             userDao.findUserById(userid)
         }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+        inflater.inflate(R.menu.menu_settings, menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem) = when(item.itemId) {
+        R.id.change_username -> {
+            //TO-DO
+            true
+        }
+        R.id.change_password -> {
+            //TO-DO
+            true
+        }
+        else -> super.onOptionsItemSelected(item)
     }
 }

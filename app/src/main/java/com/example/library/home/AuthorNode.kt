@@ -1,12 +1,14 @@
 package com.example.library.home
 
 import android.content.Context
+import android.content.Intent
 import android.view.MotionEvent
 import android.widget.ArrayAdapter
 import android.widget.ImageView
 import android.widget.ListView
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.ContextCompat.startActivity
 import com.example.library.R
 import com.example.library.network.GoogleBook
 import com.example.library.network.Items
@@ -78,9 +80,7 @@ class AuthorNode(
         super.onActivate()
     }
 
-
     override fun onTap(p0: HitTestResult?, p1: MotionEvent?) {
-        infoCard!!.isEnabled = !(infoCard!!.isEnabled)
     }
 }
 

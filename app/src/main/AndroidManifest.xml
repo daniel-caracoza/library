@@ -4,7 +4,10 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-feature android:name="android.hardware.camera.ar" android:required="true"/>
+
+    <uses-feature
+        android:name="android.hardware.camera.ar"
+        android:required="true" />
 
     <application
         android:allowBackup="true"
@@ -12,8 +15,20 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
-        <meta-data android:name="com.google.ar.core" android:value="required"/>
+        android:theme="@style/Theme.MaterialComponents.Light.NoActionBar">
+        <activity
+            android:name=".home.WebViewActivity"
+            android:label="@string/more_info"
+            android:parentActivityName=".home.MainActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".home.MainActivity" />
+        </activity>
+
+        <meta-data
+            android:name="com.google.ar.core"
+            android:value="required" />
+
         <activity android:name=".loginFlow.LoginActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -22,9 +37,15 @@
             </intent-filter>
         </activity>
         <activity android:name=".home.MainActivity" />
-        <activity android:name=".loginFlow.Registration" />
-        <activity android:name=".settings.SettingsActivity"/>
-        <activity android:name=".favorites.FavoritesActivity" />
+        <activity
+            android:name=".loginFlow.Registration"
+            android:label="@string/registration" />
+        <activity
+            android:name=".settings.SettingsActivity"
+            android:label="@string/settings" />
+        <activity
+            android:name=".favorites.FavoritesActivity"
+            android:label="@string/favorite" />
     </application>
 
 </manifest>

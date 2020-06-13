@@ -4,6 +4,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
 import retrofit2.http.Path
+import retrofit2.http.Query
 import retrofit2.http.QueryMap
 
 private const val BASE_URL  = "https://www.googleapis.com/books/v1/"
@@ -20,6 +21,9 @@ interface GoogleBooksApiService {
 
     @GET("volumes")
     suspend fun performSearch(@QueryMap parameters: Map<String, String>): Items
+
+    @GET("volumes")
+    suspend fun performBookSearch(@QueryMap parameters: Map<String, String>): Items
 
     object GoogleBooksApi {
         val retrofitService: GoogleBooksApiService by lazy {

@@ -25,6 +25,18 @@ class ApplicationRepository(private val database: AppDatabase) {
             GoodreadsApiService.GoodreadsApi.retrofitService.getSearchProperties(parameters)
         }
     }
+
+    /*
+    @return an authors id in a GoodreadsResponse
+    @param map of author name and api key
+     */
+    suspend fun goodReadsGetAuthorId(authorName:String):GoodreadsResponse {
+        return withContext(Dispatchers.IO){
+            val parameters = mapOf("key" to goodreadsApiKey)
+            GoodreadsApiService.GoodreadsApi.retrofitService.getAuthorId(authorName, parameters)
+        }
+    }
+
     
     /*
     @return a GoodsreadsResponse which contains a list of books by author
@@ -32,8 +44,8 @@ class ApplicationRepository(private val database: AppDatabase) {
      */
     suspend fun goodReadsAuthorBooksRequest(authorId: String): GoodreadsResponse {
         return withContext(Dispatchers.IO){
-            val parameters = mapOf("key" to goodreadsApiKey, "id" to authorId)
-            GoodreadsApiService.GoodreadsApi.retrofitService.getAuthorsBooks(parameters)
+            val parameters = mapOf("key" to goodreadsApiKey)
+            GoodreadsApiService.GoodreadsApi.retrofitService.getAuthorsBooks(authorId, parameters)
         }
     }
     /*@return a GoodreadsResponse which contains a list of genres the book belongs to and a review widget in raw html as an iframe, you
@@ -64,10 +76,10 @@ class ApplicationRepository(private val database: AppDatabase) {
     /*
      *  Get a specific volume from google books api using volumeid retrieved from initial search request
      */
-    suspend fun googleBooksGetVolume(volumeId: String): GoogleBook {
+    suspend fun googleBooksGetVolume(keyword: String): Items {
         return withContext(Dispatchers.IO){
-            val parameters = mapOf("key" to googleApiKey)
-            GoogleBooksApiService.GoogleBooksApi.retrofitService.getVolume(volumeId, parameters)
+            val parameters = mapOf("q" to keyword, "maxResults" to "1", "key" to googleApiKey)
+            GoogleBooksApiService.GoogleBooksApi.retrofitService.performBookSearch(parameters)
         }
     }
 

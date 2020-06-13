@@ -8,7 +8,11 @@
         android:layout_height="match_parent"
         tools:context=".settings.SettingsActivity">
 
-        <fragment
+        <include
+            android:id="@+id/favorites_toolbar"
+            layout="@layout/app_toolbar"/>
+
+        <androidx.fragment.app.FragmentContainerView
             android:id="@+id/settings"
             android:layout_width="0dp"
             android:layout_height="0dp"

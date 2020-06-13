@@ -8,6 +8,7 @@ import com.example.library.favorites.FavoritesActivity
 import com.example.library.home.MainActivity
 import com.example.library.settings.SettingsActivity
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import kotlinx.android.synthetic.main.app_toolbar.*
 
 abstract class BaseActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemSelectedListener{
 
@@ -18,6 +19,7 @@ abstract class BaseActivity : AppCompatActivity(), BottomNavigationView.OnNaviga
         setContentView(getLayoutId())
         navigationView = findViewById(R.id.bottom_navigation)
         navigationView.setOnNavigationItemSelectedListener(this)
+        setSupportActionBar(toolbar)
     }
 
     override fun onStart() {

@@ -5,6 +5,7 @@ import com.tickaroo.tikxml.retrofit.TikXmlConverterFactory
 import retrofit2.Retrofit
 import retrofit2.http.GET
 import retrofit2.http.Path
+import retrofit2.http.Query
 import retrofit2.http.QueryMap
 
 private const val BASE_URL = "https://goodreads.com"
@@ -22,8 +23,8 @@ interface GoodreadsApiService {
     @GET("search/index.xml")
     suspend fun getSearchProperties(@QueryMap parameters: Map<String, String>): GoodreadsResponse
 
-    @GET("author/show.xml")
-    suspend fun getAuthorsBooks(@QueryMap parameters: Map<String, String>): GoodreadsResponse
+    @GET("author/show/{authorId}")
+    suspend fun getAuthorsBooks(@Path("authorId") authorId:String, @QueryMap parameters: Map<String, String>): GoodreadsResponse
 
     @GET("book/show/{id}.xml")
     suspend fun getReviewsAndGenres(@Path("id") id: Int,  @QueryMap parameters: Map<String, String>): GoodreadsResponse
@@ -31,6 +32,8 @@ interface GoodreadsApiService {
     @GET("book/isbn/{isbn}.xml")
     suspend fun getReviewsAndGenresByISBN(@Path("isbn") isbn: String, @QueryMap parameters: Map<String, String>): GoodreadsResponse
 
+    @GET("api/author_url/{author}")
+    suspend fun getAuthorId(@Path("author") author:String, @QueryMap parameters: Map<String, String>):GoodreadsResponse
 
     object GoodreadsApi {
 

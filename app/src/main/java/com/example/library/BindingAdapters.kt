@@ -2,6 +2,7 @@ package com.example.library
 
 import android.webkit.WebView
 import android.widget.ImageView
+import android.widget.ListView
 import android.widget.TextView
 import androidx.core.net.toUri
 import androidx.databinding.BindingAdapter
@@ -14,6 +15,7 @@ fun bindImage(imgView: ImageView, imgUrl: String?){
         val imgUri = imgUrl.toUri().buildUpon().scheme("https").build()
         Glide.with(imgView.context)
             .load(imgUri)
+            .override(400, 400)
             .into(imgView)
     }
 }
@@ -34,6 +36,11 @@ fun bindFavoriteImage(imgView: ImageView, item: Favorite){
             .load(imgUri)
             .into(imgView)
     }
+}
+@BindingAdapter("bookList")
+fun ListView.setBookList(bookList:List<String>){
+
+
 }
 
 @BindingAdapter("favoriteTitle")

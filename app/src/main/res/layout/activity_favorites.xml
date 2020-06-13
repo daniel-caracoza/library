@@ -8,15 +8,20 @@
         android:layout_height="match_parent"
         tools:context=".favorites.FavoritesActivity">
 
-        <fragment
+        <include
+            android:id="@+id/favorites_toolbar"
+            layout="@layout/app_toolbar"/>
+
+
+        <androidx.fragment.app.FragmentContainerView
             android:id="@+id/favoriteList"
             android:name="com.example.library.favorites.FavoriteList_fragment"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="0dp"
             app:layout_constraintBottom_toTopOf="@+id/bottom_navigation"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"/>
+            app:layout_constraintTop_toBottomOf="@id/favorites_toolbar"/>
 
         <include
             android:id="@+id/bottom_navigation"

@@ -2,6 +2,7 @@ package com.example.library.home
 
 import android.content.Context
 import android.view.MotionEvent
+import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.example.library.R
@@ -46,8 +47,12 @@ class PriceNode(
                         renderable.isShadowReceiver = false
                         infoCard!!.renderable = renderable
                         val view = renderable.view as LinearLayout
-                        val price = view.findViewById<TextView>(R.id.price) as TextView
+                        val price = view.findViewById(R.id.price) as TextView
                         price.text = googleBook.saleInfo.retailPrice.amount
+                        val buy = view.findViewById<Button>(R.id.buy_button)
+                        buy.setOnClickListener {
+                            //intent to start the buying process here!
+                        }
                     }
                 )
                 .exceptionally { throwable: Throwable? ->

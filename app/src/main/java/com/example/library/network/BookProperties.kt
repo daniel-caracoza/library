@@ -12,6 +12,7 @@ class GoodreadsResponse {
 
     @Element
     lateinit var book: Book
+
 }
 @Xml
 class Search {
@@ -54,11 +55,18 @@ data class BestBook(
 
 @Xml
 class Author {
-    @PropertyElement
-    var id: Int = 0
+
+    @Attribute
+    lateinit var id: String
 
     @PropertyElement
     lateinit var name: String
+
+    @PropertyElement
+    lateinit var image_url: String
+
+    @PropertyElement
+    lateinit var about: String
 
     @Path("books")
     @Element

@@ -3,10 +3,8 @@ package com.example.library.favorites
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.view.*
 import androidx.fragment.app.Fragment
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
@@ -18,8 +16,8 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 
 class FavoriteList_fragment : Fragment() {
 
-    private var userId:Long = 0
     private lateinit var sharedPreferences: SharedPreferences
+    private lateinit var favoritesViewModel: FavoritesViewModel
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -29,11 +27,12 @@ class FavoriteList_fragment : Fragment() {
 
         val application = requireNotNull(this.activity).application
         sharedPreferences = application.getSharedPreferences("SHARED_PREFS", Context.MODE_PRIVATE)
+        val userId = retrieveSignIn()
         val dataSource = AppDatabase.getInstance(application).favoriteDao
 
         val viewModelFactory = FavoritesViewModelFactory(userId, dataSource, application)
 
-        val favoritesViewModel = ViewModelProviders.of(
+        favoritesViewModel = ViewModelProviders.of(
             this, viewModelFactory).get(FavoritesViewModel::class.java)
         binding.favoriteViewModel = favoritesViewModel
         binding.lifecycleOwner = this
@@ -52,15 +51,27 @@ class FavoriteList_fragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        retrieveSignIn()
+        setHasOptionsMenu(true)
     }
 
-    private fun retrieveSignIn(){
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+        inflater.inflate(R.menu.menu_favorites, menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem) = when(item.itemId) {
+        R.id.clear_list -> {
+            favoritesViewModel.onClear()
+            true
+        }
+        else -> super.onOptionsItemSelected(item)
+    }
+
+    private fun retrieveSignIn(): Long {
 
         val account: GoogleSignInAccount? = GoogleSignIn.getLastSignedInAccount(activity)
         val uid = sharedPreferences.getLong("userid", 0)
-
-        userId = when(account == null){
+        return when(account == null){
             true -> uid
             false -> {
                 val gid = account.id!!
